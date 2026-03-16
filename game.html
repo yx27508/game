@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>街机对战：终极联机版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p1-color: #ff4757;
+            --p2-color: #2e86de;
+        }
+        body {
+            background-color: #0a0a0a;
+            color: #fff;
+            font-family: 'Inter', system-ui, sans-serif;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .arcade-font { font-family: 'ZCOOL KuaiLe', cursive; }
+        canvas {
+            background: #111;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.05);
+            border: 2px solid #333;
+            border-radius: 4px;
+        }
+        .health-bar-bg {
+            height: 24px;
+            background: #222;
+            border: 2px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .health-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease-out;
+        }
+        .health-bar-ghost {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            background: #fff;
+            opacity: 0.3;
+            transition: width 0.8s ease-out;
+        }
+        .shake { animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 游戏主菜单 -->
+    <div id="main-menu" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90">
+        <h1 class="text-8xl arcade-font mb-2 text-transparent bg-clip-text bg-gradient-to-b from-yellow-400 to-orange-600 drop-shadow-lg">
+            ULTIMATE FIGHTER
+        </h1>
+        <p class="text-gray-400 tracking-widest mb-12 uppercase">极简街机对战系统</p>
+        
+        <div class="space-y-4 w-72">
+            <button onclick="initGame('local')" class="w-full py-4 bg-white text-black font-black rounded hover:bg-yellow-400 transition-all transform hover:scale-105 active:scale-95 uppercase">
+                本地双人对战
+            </button>
+            <div class="relative flex items-center py-2">
+                <div class="flex-grow border-t border-white/10"></div>
+                <span class="flex-shrink mx-4 text-xs text-gray-600 uppercase">或者联机对战</span>
+                <div class="flex-grow border-t border-white/10"></div>
+            </div>
+            <input id="room-id" type="text" placeholder="输入房间ID (例如: 888)" class="w-full px-4 py-3 bg-gray-900 border border-white/20 rounded focus:border-blue-500 outline-none text-center">
+            <button onclick="initGame('online')" class="w-full py-4 bg-blue-600 hover:bg-blue-500 font-black rounded transition-all transform hover:scale-105 active:scale-95 uppercase">
+                创建/加入房间
+            </button>
+        </div>
+        <p class="mt-8 text-xs text-gray-500 italic">按 [F11] 切换全屏以获得最佳体验</p>
+    </div>
+
+    <!-- 游戏 UI 覆盖层 -->
+    <div id="game-interface" class="hidden flex flex-col items-center">
+        <div class="w-[1000px] flex items-center justify-between mb-6 px-2">
+            <!-- P1 -->
+            <div class="w-5/12">
+                <div class="flex justify-between items-end mb-1">
+                    <span id="p1-name" class="font-black italic text-red-500 text-xl">PLAYER 1</span>
+                    <span id="p1-hp-text" class="text-xs text-gray-500">100 / 100</span>
+                </div>
+                <div class="health-bar-bg">
+                    <div id="p1-hp-ghost" class="health-bar-ghost" style="width: 100%;"></div>
+                    <div id="p1-hp-fill" class="health-bar-fill bg-red-500" style="width: 100%; float: right;"></div>
+                </div>
+            </div>
+
+            <!-- 计时 -->
+            <div class="flex flex-col items-center">
+                <div id="game-timer" class="text-5xl arcade-font text-yellow-500 bg-black/40 px-6 py-2 rounded-lg border-b-4 border-yellow-600">60</div>
+                <div id="online-status" class="text-[10px] text-gray-500 mt-2 uppercase tracking-tighter">本地模式</div>
+            </div>
+
+            <!-- P2 -->
+            <div class="w-5/12">
+                <div class="flex justify-between items-end mb-1">
+                    <span id="p2-hp-text" class="text-xs text-gray-500">100 / 100</span>
+                    <span id="p2-name" class="font-black italic text-blue-500 text-xl text-right">PLAYER 2</span>
+                </div>
+                <div class="health-bar-bg">
+                    <div id="p2-hp-ghost" class="health-bar-ghost" style="width: 100%; left:0; right:auto;"></div>
+                    <div id="p2-hp-fill" class="health-bar-fill bg-blue-500" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <!-- 操作提示 -->
+        <div class="mt-8 grid grid-cols-2 gap-20 text-[10px] text-gray-500 uppercase tracking-widest">
+            <div class="text-left">
+                <span class="text-red-500 font-bold">P1:</span> W 跳跃 / A D 移动 / 空格 攻击
+            </div>
+            <div class="text-right">
+                <span class="text-blue-500 font-bold">P2:</span> ↑ 跳跃 / ← → 移动 / ENTER 攻击
+            </div>
+        </div>
+    </div>
+
+    <!-- 结算/消息弹窗 -->
+    <div id="overlay" class="hidden fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+        <h2 id="msg-title" class="text-7xl arcade-font mb-4 italic">K.O.</h2>
+        <p id="msg-body" class="text-xl text-gray-300 mb-10 tracking-widest uppercase">Player 1 赢得了胜利</p>
+        <button onclick="location.reload()" class="px-12 py-4 bg-white text-black font-black rounded-full hover:bg-yellow-400 transition-all uppercase tracking-widest">
+            返回主菜单
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase 配置环境注入
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ultimate-fighter-v2';
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 1000;
+        canvas.height = 500;
+
+        // 全局变量
+        let gameState = 'menu';
+        let gameMode = 'local';
+        let myRole = 'p1'; // 在线模式分配
+        let roomId = null;
+        let user = null;
+        let timer = 60;
+        let gameActive = false;
+        let particles = [];
+
+        const gravity = 0.8;
+
+        class Fighter {
+            constructor({ position, color, id, flipAttack = false }) {
+                this.id = id;
+                this.position = position;
+                this.velocity = { x: 0, y: 0 };
+                this.width = 60;
+                this.height = 120;
+                this.color = color;
+                this.health = 100;
+                this.isAttacking = false;
+                this.isHit = false;
+                this.hitTime = 0;
+                this.lastKey = '';
+                this.flipAttack = flipAttack;
+                this.attackBox = {
+                    width: 120,
+                    height: 50,
+                    offset: { x: flipAttack ? -60 : 0, y: 30 }
+                };
+            }
+
+            draw() {
+                // 绘制角色阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(this.position.x + this.width/2, canvas.height, this.width/1.5, 10, 0, 0, Math.PI*2);
+                ctx.fill();
+
+                // 角色主体
+                ctx.fillStyle = this.isHit ? '#fff' : this.color;
+                ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+                // 装饰：眼睛
+                ctx.fillStyle = '#000';
+                const eyeX = this.flipAttack ? this.position.x + 10 : this.position.x + 40;
+                ctx.fillRect(eyeX, this.position.y + 20, 10, 10);
+
+                // 攻击框可视化 (仅调试或攻击瞬时)
+                if (this.isAttacking) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.fillRect(
+                        this.position.x + this.attackBox.offset.x,
+                        this.position.y + this.attackBox.offset.y,
+                        this.attackBox.width,
+                        this.attackBox.height
+                    );
+                }
+            }
+
+            update() {
+                this.draw();
+                
+                this.position.x += this.velocity.x;
+                this.position.y += this.velocity.y;
+
+                // 重力逻辑
+                if (this.position.y + this.height + this.velocity.y >= canvas.height) {
+                    this.velocity.y = 0;
+                    this.position.y = canvas.height - this.height;
+                } else {
+                    this.velocity.y += gravity;
+                }
+
+                // 边界碰撞
+                if (this.position.x < 0) this.position.x = 0;
+                if (this.position.x + this.width > canvas.width) this.position.x = canvas.width - this.width;
+            }
+
+            attack() {
+                if (this.isAttacking) return;
+                this.isAttacking = true;
+                setTimeout(() => this.isAttacking = false, 150);
+            }
+
+            takeHit() {
+                this.health = Math.max(0, this.health - 5);
+                this.isHit = true;
+                this.hitTime = Date.now();
+                createParticles(this.position.x + this.width/2, this.position.y + 50, this.color);
+                
+                const canvasCont = document.getElementById('canvas-container');
+                canvasCont.classList.add('shake');
+                setTimeout(() => {
+                    this.isHit = false;
+                    canvasCont.classList.remove('shake');
+                }, 100);
+            }
+        }
+
+        const p1 = new Fighter({ position: { x: 150, y: 0 }, color: '#ff4757', id: 'p1' });
+        const p2 = new Fighter({ position: { x: 800, y: 0 }, color: '#2e86de', id: 'p2', flipAttack: true });
+
+        const keys = {
+            a: { pressed: false }, d: { pressed: false }, w: { pressed: false },
+            ArrowLeft: { pressed: false }, ArrowRight: { pressed: false }, ArrowUp: { pressed: false }
+        };
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: color
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function checkCollision(f1, f2) {
+            const attackLeft = f1.position.x + f1.attackBox.offset.x;
+            const attackRight = attackLeft + f1.attackBox.width;
+            const attackTop = f1.position.y + f1.attackBox.offset.y;
+            const attackBottom = attackTop + f1.attackBox.height;
+
+            return (
+                attackRight >= f2.position.x &&
+                attackLeft <= f2.position.x + f2.width &&
+                attackBottom >= f2.position.y &&
+                attackTop <= f2.position.y + f2.height
+            );
+        }
+
+        // 核心游戏循环
+        function gameLoop() {
+            if (!gameActive) return;
+            window.requestAnimationFrame(gameLoop);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新 P1
+            if (gameMode === 'local' || myRole === 'p1') {
+                p1.velocity.x = 0;
+                if (keys.a.pressed && p1.lastKey === 'a') { p1.velocity.x = -7; p1.attackBox.offset.x = -60; p1.flipAttack = true; }
+                else if (keys.d.pressed && p1.lastKey === 'd') { p1.velocity.x = 7; p1.attackBox.offset.x = 0; p1.flipAttack = false; }
+            }
+            p1.update();
+
+            // 更新 P2
+            if (gameMode === 'local' || myRole === 'p2') {
+                p2.velocity.x = 0;
+                if (keys.ArrowLeft.pressed && p2.lastKey === 'ArrowLeft') { p2.velocity.x = -7; p2.attackBox.offset.x = -60; p2.flipAttack = true; }
+                else if (keys.ArrowRight.pressed && p2.lastKey === 'ArrowRight') { p2.velocity.x = 7; p2.attackBox.offset.x = 0; p2.flipAttack = false; }
+            }
+            p2.update();
+
+            updateParticles();
+
+            // 碰撞检测逻辑 (由主机 P1 统一计算或本地模式计算)
+            if (gameMode === 'local' || myRole === 'p1') {
+                if (p1.isAttacking && checkCollision(p1, p2)) {
+                    p1.isAttacking = false;
+                    p2.takeHit();
+                    updateUI();
+                }
+                if (p2.isAttacking && checkCollision(p2, p1)) {
+                    p2.isAttacking = false;
+                    p1.takeHit();
+                    updateUI();
+                }
+            }
+
+            // 在线同步
+            if (gameMode === 'online') syncData();
+
+            // 胜负判断
+            if (p1.health <= 0 || p2.health <= 0) endGame();
+        }
+
+        function updateUI() {
+            document.getElementById('p1-hp-fill').style.width = p1.health + '%';
+            document.getElementById('p1-hp-ghost').style.width = p1.health + '%';
+            document.getElementById('p1-hp-text').innerText = `${p1.health} / 100`;
+
+            document.getElementById('p2-hp-fill').style.width = p2.health + '%';
+            document.getElementById('p2-hp-ghost').style.width = p2.health + '%';
+            document.getElementById('p2-hp-text').innerText = `${p2.health} / 100`;
+        }
+
+        function startTimer() {
+            const tId = setInterval(() => {
+                if (!gameActive) { clearInterval(tId); return; }
+                timer--;
+                document.getElementById('game-timer').innerText = timer;
+                if (timer <= 0) { endGame(); clearInterval(tId); }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            document.getElementById('overlay').classList.remove('hidden');
+            const msgTitle = document.getElementById('msg-title');
+            const msgBody = document.getElementById('msg-body');
+
+            if (p1.health === p2.health) {
+                msgTitle.innerText = "DRAW";
+                msgBody.innerText = "平分秋色";
+            } else {
+                const winner = p1.health > p2.health ? "PLAYER 1" : "PLAYER 2";
+                msgTitle.innerText = "K.O.";
+                msgBody.innerText = `${winner} 获得了最终胜利`;
+                msgBody.style.color = p1.health > p2.health ? '#ff4757' : '#2e86de';
+            }
+        }
+
+        // Firebase 联机逻辑
+        async function syncData() {
+            if (!roomId || !user || !gameActive) return;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+            const myData = myRole === 'p1' ? p1 : p2;
+            
+            try {
+                await updateDoc(roomRef, {
+                    [myRole]: {
+                        x: myData.position.x,
+                        y: myData.position.y,
+                        health: myData.health,
+                        isAttacking: myData.isAttacking,
+                        isHit: myData.isHit,
+                        flip: myData.flipAttack
+                    }
+                });
+            } catch (e) {}
+        }
+
+        async function joinOnlineRoom() {
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+            
+            onSnapshot(roomRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    myRole = 'p1';
+                    setDoc(roomRef, {
+                        p1: { x: 150, y: 0, health: 100, isAttacking: false, isHit: false, flip: false },
+                        p2: { x: 800, y: 0, health: 100, isAttacking: false, isHit: false, flip: true },
+                        p1Id: user.uid,
+                        timer: 60
+                    });
+                    document.getElementById('online-status').innerText = `已连接 - 房间: ${roomId} (等待对手)`;
+                } else {
+                    const data = snapshot.data();
+                    if (!myRole) myRole = data.p1Id === user.uid ? 'p1' : 'p2';
+                    
+                    const other = myRole === 'p1' ? 'p2' : 'p1';
+                    const otherObj = myRole === 'p1' ? p2 : p1;
+                    
+                    if (data[other]) {
+                        otherObj.position.x = data[other].x;
+                        otherObj.position.y = data[other].y;
+                        otherObj.health = data[other].health;
+                        otherObj.isAttacking = data[other].isAttacking;
+                        otherObj.isHit = data[other].isHit;
+                        otherObj.flipAttack = data[other].flip;
+                        updateUI();
+                    }
+                    
+                    if (myRole === 'p2' && data.p1Id) {
+                        document.getElementById('online-status').innerText = `已连接 - 房间: ${roomId} (正在对战)`;
+                    }
+                }
+            });
+        }
+
+        // 入口函数
+        window.initGame = async (mode) => {
+            gameMode = mode;
+            if (mode === 'online') {
+                const inputId = document.getElementById('room-id').value.trim();
+                if (!inputId) { alert("请输入房间ID"); return; }
+                roomId = inputId;
+                
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, u => {
+                    if (u) {
+                        user = u;
+                        joinOnlineRoom();
+                        startSession();
+                    }
+                });
+            } else {
+                startSession();
+            }
+        };
+
+        function startSession() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-interface').classList.remove('hidden');
+            gameActive = true;
+            updateUI();
+            startTimer();
+            gameLoop();
+        }
+
+        // 键盘处理
+        window.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            switch(e.key) {
+                // P1
+                case 'a': keys.a.pressed = true; p1.lastKey = 'a'; break;
+                case 'd': keys.d.pressed = true; p1.lastKey = 'd'; break;
+                case 'w': if (p1.position.y + p1.height >= canvas.height) p1.velocity.y = -20; break;
+                case ' ': p1.attack(); break;
+                // P2
+                case 'ArrowLeft': keys.ArrowLeft.pressed = true; p2.lastKey = 'ArrowLeft'; break;
+                case 'ArrowRight': keys.ArrowRight.pressed = true; p2.lastKey = 'ArrowRight'; break;
+                case 'ArrowUp': if (p2.position.y + p2.height >= canvas.height) p2.velocity.y = -20; break;
+                case 'Enter': p2.attack(); break;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            switch(e.key) {
+                case 'a': keys.a.pressed = false; break;
+                case 'd': keys.d.pressed = false; break;
+                case 'ArrowLeft': keys.ArrowLeft.pressed = false; break;
+                case 'ArrowRight': keys.ArrowRight.pressed = false; break;
+            }
+        });
+    </script>
+</body>
+</html>
