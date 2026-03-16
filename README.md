@@ -1,10 +1,16 @@
 # game
 
+git add .
+git commit -m "update game"
+git push origin main
+
+
+
+https://yx27508.github.io/game/
 
 
 # Ultimate Fighter (Web Game)
 
-一个基于 HTML Canvas 的街机格斗小游戏，支持本地双人对战和在线房间模式。
 
 GitHub Pages 在线版本：
 
