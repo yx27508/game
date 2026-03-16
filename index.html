@@ -1,234 +1,650 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  query,
-  onSnapshot,
-  serverTimestamp,
-  doc
-} from 'firebase/firestore';
-import {
-  getAuth,
-  signInAnonymously,
-  signInWithCustomToken,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { Send, User, MessageCircle, Wifi, Users } from 'lucide-react';
-
-// --- 环境变量与 Firebase 初始化 ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'anonymous-live-board';
-
-// 预设颜色池，增加视觉区分度
-const COLORS = [
-  '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
-  '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
-];
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
-  const [identity, setIdentity] = useState({ name: '', color: '' });
-  const [isSending, setIsSending] = useState(false);
-  const scrollRef = useRef(null);
-
-  // 1. 认证流 (遵循 Rule 3)
-  useEffect(() => {
-    const performAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Auth Error:", err);
-      }
-    };
-    performAuth();
-
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        setUser(u);
-        const shortId = u.uid.slice(-4).toUpperCase();
-        const colorIdx = u.uid.charCodeAt(0) % COLORS.length;
-        setIdentity({
-          name: `访客_${shortId}`,
-          color: COLORS[colorIdx]
-        });
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // 2. 消息流同步 (遵循 Rule 1 & 2)
-  useEffect(() => {
-    if (!user) return;
-
-    // 严格遵循路径规则: /artifacts/{appId}/public/data/messages
-    const msgCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-
-    // 简单查询，内存排序 (遵循 Rule 2)
-    const q = query(msgCol);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-
-      // 在内存中进行时间排序
-      const sorted = data.sort((a, b) => {
-        const timeA = a.timestamp?.toMillis() || 0;
-        const timeB = b.timestamp?.toMillis() || 0;
-        return timeA - timeB;
-      });
-
-      setMessages(sorted.slice(-100)); // 仅展示最近100条以保证性能
-    }, (error) => {
-      console.error("Snapshot Error:", error);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  // 3. 自动滚动到底部
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALB Live</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --panel: rgba(255, 255, 255, 0.88);
+      --panel-solid: #ffffff;
+      --text: #1e293b;
+      --muted: #94a3b8;
+      --border: #e2e8f0;
+      --indigo: #4f46e5;
+      --indigo-dark: #4338ca;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --bubble-me: #4f46e5;
+      --bubble-other: #ffffff;
     }
-  }, [messages]);
 
-  // 4. 发送逻辑
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputValue.trim() || !user || isSending) return;
-
-    setIsSending(true);
-    const text = inputValue.trim();
-    setInputValue('');
-
-    try {
-      const msgCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-      await addDoc(msgCol, {
-        text,
-        senderName: identity.name,
-        senderColor: identity.color,
-        uid: user.uid,
-        timestamp: serverTimestamp()
-      });
-    } catch (err) {
-      console.error("Send Failed:", err);
-    } finally {
-      setIsSending(false);
+    * {
+      box-sizing: border-box;
     }
-  };
 
-  return (
-    <div className="flex flex-col h-screen bg-slate-100 text-slate-800 antialiased">
-      {/* 顶部导航 */}
-      <header className="bg-white/80 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-            <MessageCircle className="text-white w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-none">ALB Live</h1>
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-1">Anonymous Board</p>
-          </div>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--indigo);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 10px 25px rgba(79, 70, 229, 0.25);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .status-badge,
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-badge {
+      background: var(--green-bg);
+      color: #15803d;
+      border: 1px solid #dcfce7;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.14);
+      flex-shrink: 0;
+    }
+
+    .user-badge {
+      background: #e2e8f0;
+      color: #334155;
+      border-radius: 14px;
+    }
+
+    .user-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: 0.75;
+      flex-shrink: 0;
+    }
+
+    .chat-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .messages-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 18px;
+    }
+
+    .messages {
+      max-width: 880px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .empty-state {
+      margin: 80px auto 0;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 18px;
+      border-radius: 999px;
+      background: var(--panel-solid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .message-row {
+      display: flex;
+    }
+
+    .message-row.me {
+      justify-content: flex-end;
+    }
+
+    .message-row.other {
+      justify-content: flex-start;
+    }
+
+    .message-stack {
+      display: flex;
+      flex-direction: column;
+      max-width: min(78%, 640px);
+    }
+
+    .message-row.me .message-stack {
+      align-items: flex-end;
+    }
+
+    .message-row.other .message-stack {
+      align-items: flex-start;
+    }
+
+    .message-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding: 0 6px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .sender-name {
+      font-weight: 800;
+    }
+
+    .message-bubble {
+      padding: 14px 16px;
+      border-radius: 18px;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .message-row.me .message-bubble {
+      background: var(--bubble-me);
+      color: #fff;
+      border-top-right-radius: 6px;
+    }
+
+    .message-row.other .message-bubble {
+      background: var(--bubble-other);
+      color: #334155;
+      border: 1px solid var(--border);
+      border-top-left-radius: 6px;
+    }
+
+    .composer {
+      border-top: 1px solid var(--border);
+      background: var(--panel-solid);
+      padding: 16px;
+    }
+
+    .composer-inner {
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    .composer-form {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .composer-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: #f1f5f9;
+      color: #334155;
+      border-radius: 18px;
+      padding: 16px 64px 16px 18px;
+      font-size: 15px;
+      transition: 0.2s ease;
+    }
+
+    .composer-input:focus {
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.28);
+    }
+
+    .composer-button {
+      position: absolute;
+      right: 8px;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 14px;
+      background: var(--indigo);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      box-shadow: 0 10px 25px rgba(79, 70, 229, 0.24);
+    }
+
+    .composer-button:hover {
+      background: var(--indigo-dark);
+      transform: translateY(-1px);
+    }
+
+    .composer-button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .composer-footer {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .notice {
+      max-width: 880px;
+      margin: 0 auto 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 14px 16px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .topbar-right {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .messages-wrap {
+        padding: 20px 12px;
+      }
+
+      .message-stack {
+        max-width: 90%;
+      }
+
+      .composer {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">💬</div>
+        <div>
+          <div class="brand-title">ALB Live</div>
+          <div class="brand-subtitle">Anonymous Board</div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span className="text-xs font-semibold text-green-700">实时在线</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
-            <User className="w-4 h-4 text-slate-500" />
-            <span className="text-sm font-bold" style={{ color: identity.color }}>{identity.name || '登录中...'}</span>
-          </div>
+      <div class="topbar-right">
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span>实时在线</span>
         </div>
-      </header>
+        <div class="user-badge" id="userBadge">
+          <span class="user-dot"></span>
+          <span id="identityName">访客_----</span>
+        </div>
+      </div>
+    </header>
 
-      {/* 聊天区域 */}
-      <main
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6"
-      >
-        <div className="max-w-3xl mx-auto space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="inline-flex p-4 bg-white rounded-full mb-4 shadow-sm">
-                <Users className="w-8 h-8 text-slate-300" />
-              </div>
-              <p className="text-slate-400">广场空空如也，说点什么打破沉静吧</p>
-            </div>
-          ) : (
-            messages.map((msg) => {
-              const isMe = msg.uid === user?.uid;
-              return (
-                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
-                    <div className="flex items-center gap-2 mb-1.5 px-1">
-                      {!isMe && <span className="text-xs font-bold" style={{ color: msg.senderColor }}>{msg.senderName}</span>}
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
-                      </span>
-                      {isMe && <span className="text-xs font-bold" style={{ color: msg.senderColor }}>{msg.senderName}</span>}
-                    </div>
-                    <div
-                      className={`px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed ${
-                        isMe
-                          ? 'bg-indigo-600 text-white rounded-tr-none'
-                          : 'bg-white text-slate-700 border border-slate-200 rounded-tl-none'
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
+    <div class="chat-shell">
+      <main class="messages-wrap" id="scrollArea">
+        <div class="messages" id="messages">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">👥</div>
+            <div>广场空空如也，说点什么打破沉静吧</div>
+          </div>
         </div>
       </main>
 
-      {/* 输入区域 */}
-      <footer className="p-4 bg-white border-t border-slate-200">
-        <form
-          onSubmit={sendMessage}
-          className="max-w-3xl mx-auto relative flex items-center"
-        >
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="输入你想说的话..."
-            className="w-full bg-slate-100 border-transparent rounded-2xl py-4 pl-5 pr-14 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-slate-700"
-          />
-          <button
-            type="submit"
-            disabled={!inputValue.trim() || isSending}
-            className="absolute right-2 p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:bg-slate-300 disabled:scale-95 transition-all shadow-md active:shadow-inner"
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </form>
-        <div className="text-center mt-3">
-          <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1 font-medium">
-            <Wifi className="w-3 h-3" /> 端到端加密传输 · 阅后即焚(实验中) · 匿名公共流
-          </p>
+      <footer class="composer">
+        <div class="composer-inner">
+          <div class="notice" id="configNotice" style="display:none;"></div>
+          <form class="composer-form" id="messageForm">
+            <input
+              id="messageInput"
+              class="composer-input"
+              type="text"
+              placeholder="输入你想说的话..."
+              autocomplete="off"
+              maxlength="500"
+            />
+            <button id="sendButton" class="composer-button" type="submit" aria-label="发送">
+              ➤
+            </button>
+          </form>
+          <div class="composer-footer">匿名公共流 · GitHub Pages 纯 HTML 版 · Firebase 实时同步</div>
         </div>
       </footer>
     </div>
-  );
-}
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getAuth,
+      signInAnonymously,
+      signInWithCustomToken,
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      onSnapshot,
+      serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const COLORS = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
+      '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
+    ];
+
+    const identityNameEl = document.getElementById('identityName');
+    const userBadgeEl = document.getElementById('userBadge');
+    const messagesEl = document.getElementById('messages');
+    const emptyStateEl = document.getElementById('emptyState');
+    const formEl = document.getElementById('messageForm');
+    const inputEl = document.getElementById('messageInput');
+    const sendButtonEl = document.getElementById('sendButton');
+    const scrollAreaEl = document.getElementById('scrollArea');
+    const configNoticeEl = document.getElementById('configNotice');
+
+    let user = null;
+    let identity = { name: '访客_----', color: '#64748b' };
+    let isSending = false;
+    let messages = [];
+
+    function showConfigNotice(message) {
+      configNoticeEl.textContent = message;
+      configNoticeEl.style.display = 'block';
+    }
+
+    function hideConfigNotice() {
+      configNoticeEl.style.display = 'none';
+      configNoticeEl.textContent = '';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) return '...';
+      try {
+        if (typeof timestamp.toDate === 'function') {
+          return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        if (typeof timestamp.toMillis === 'function') {
+          return new Date(timestamp.toMillis()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return '...';
+      }
+    }
+
+    function renderMessages() {
+      messagesEl.innerHTML = '';
+
+      if (!messages.length) {
+        messagesEl.appendChild(emptyStateEl);
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      messages.forEach((msg) => {
+        const isMe = msg.uid && user && msg.uid === user.uid;
+        const row = document.createElement('div');
+        row.className = `message-row ${isMe ? 'me' : 'other'}`;
+
+        const stack = document.createElement('div');
+        stack.className = 'message-stack';
+
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+
+        const name = document.createElement('span');
+        name.className = 'sender-name';
+        name.textContent = msg.senderName || '匿名访客';
+        name.style.color = msg.senderColor || '#64748b';
+
+        const time = document.createElement('span');
+        time.textContent = formatTime(msg.timestamp);
+
+        if (isMe) {
+          meta.appendChild(time);
+          meta.appendChild(name);
+        } else {
+          meta.appendChild(name);
+          meta.appendChild(time);
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = msg.text || '';
+
+        stack.appendChild(meta);
+        stack.appendChild(bubble);
+        row.appendChild(stack);
+        fragment.appendChild(row);
+      });
+
+      messagesEl.appendChild(fragment);
+      scrollAreaEl.scrollTop = scrollAreaEl.scrollHeight;
+    }
+
+    function updateIdentityDisplay() {
+      identityNameEl.textContent = identity.name;
+      identityNameEl.style.color = identity.color;
+      userBadgeEl.style.color = identity.color;
+    }
+
+    function setSendingState(sending) {
+      isSending = sending;
+      sendButtonEl.disabled = sending || !inputEl.value.trim();
+    }
+
+    inputEl.addEventListener('input', () => {
+      sendButtonEl.disabled = isSending || !inputEl.value.trim();
+    });
+
+    const firebaseConfig = window.FIREBASE_CONFIG || {
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      storageBucket: '',
+      messagingSenderId: '',
+      appId: ''
+    };
+
+    const hasUsableConfig = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId;
+
+    if (!hasUsableConfig) {
+      showConfigNotice('还没有配置 Firebase。这个 HTML 页面已经可以直接放到 GitHub Pages，但要实现多人实时聊天，你需要把页面里的 FIREBASE_CONFIG 配置成你自己的 Firebase 项目参数。');
+      updateIdentityDisplay();
+      renderMessages();
+      formEl.addEventListener('submit', (event) => event.preventDefault());
+    } else {
+      hideConfigNotice();
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const appId = window.APP_ID || 'anonymous-live-board';
+      const initialAuthToken = window.INITIAL_AUTH_TOKEN || null;
+      const msgCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+
+      async function performAuth() {
+        try {
+          if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+          } else {
+            await signInAnonymously(auth);
+          }
+        } catch (err) {
+          console.error('Auth Error:', err);
+          showConfigNotice('Firebase 登录失败，请检查 Authentication 是否启用了匿名登录。');
+        }
+      }
+
+      onAuthStateChanged(auth, (u) => {
+        if (!u) return;
+        user = u;
+        const shortId = u.uid.slice(-4).toUpperCase();
+        const colorIdx = u.uid.charCodeAt(0) % COLORS.length;
+        identity = {
+          name: `访客_${shortId}`,
+          color: COLORS[colorIdx]
+        };
+        updateIdentityDisplay();
+        renderMessages();
+      });
+
+      const q = query(msgCol);
+      onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        messages = data
+          .sort((a, b) => {
+            const timeA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
+            const timeB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
+            return timeA - timeB;
+          })
+          .slice(-100);
+        renderMessages();
+      }, (error) => {
+        console.error('Snapshot Error:', error);
+        showConfigNotice('读取消息失败，请检查 Firestore 规则和数据库路径是否正确。');
+      });
+
+      formEl.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const text = inputEl.value.trim();
+        if (!text || !user || isSending) return;
+
+        setSendingState(true);
+        inputEl.value = '';
+
+        try {
+          await addDoc(msgCol, {
+            text,
+            senderName: identity.name,
+            senderColor: identity.color,
+            uid: user.uid,
+            timestamp: serverTimestamp()
+          });
+        } catch (err) {
+          console.error('Send Failed:', err);
+          showConfigNotice('发送失败，请检查 Firestore 权限配置。');
+        } finally {
+          setSendingState(false);
+        }
+      });
+
+      updateIdentityDisplay();
+      renderMessages();
+      performAuth();
+    }
+  </script>
+</body>
+</html>

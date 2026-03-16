@@ -10,6 +10,8 @@ https://yx27508.github.io/game/
 
 # Ultimate Fighter (Web Game)
 
+live-server
+
 
 GitHub Pages 在线版本：
 
