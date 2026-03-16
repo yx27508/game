@@ -5,7 +5,6 @@ git commit -m "update game"
 git push origin main
 
 
-
 https://yx27508.github.io/game/
 
 

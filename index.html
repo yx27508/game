@@ -1,387 +1,234 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>怪物进化：合成大作战</title>
-    <!-- 引入 Matter.js 物理引擎 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #1a1a2e;
-            --panel-color: rgba(255, 255, 255, 0.1);
-            --accent-color: #e94560;
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  onSnapshot,
+  serverTimestamp,
+  doc
+} from 'firebase/firestore';
+import {
+  getAuth,
+  signInAnonymously,
+  signInWithCustomToken,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { Send, User, MessageCircle, Wifi, Users } from 'lucide-react';
+
+// --- 环境变量与 Firebase 初始化 ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'anonymous-live-board';
+
+// 预设颜色池，增加视觉区分度
+const COLORS = [
+  '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
+  '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
+];
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [identity, setIdentity] = useState({ name: '', color: '' });
+  const [isSending, setIsSending] = useState(false);
+  const scrollRef = useRef(null);
+
+  // 1. 认证流 (遵循 Rule 3)
+  useEffect(() => {
+    const performAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
-
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            font-family: 'Microsoft YaHei', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            touch-action: none;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 100%;
-            max-height: 800px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            background: linear-gradient(to bottom, #16213e, #1a1a2e);
-            overflow: hidden;
-        }
-
-        canvas {
-            display: block;
-        }
-
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            pointer-events: none;
-            padding: 20px;
-            box-sizing: border-box;
-            color: white;
-            z-index: 10;
-        }
-
-        .score-box {
-            background: var(--panel-color);
-            padding: 10px 20px;
-            border-radius: 15px;
-            display: inline-block;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .score-label { font-size: 14px; opacity: 0.8; }
-        .score-value { font-size: 28px; font-weight: bold; display: block; }
-
-        #game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            display: none;
-            z-index: 100;
-            width: 70%;
-            border: 2px solid var(--accent-color);
-        }
-
-        button {
-            background: var(--accent-color);
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: transform 0.2s;
-            pointer-events: auto;
-        }
-
-        button:active { transform: scale(0.95); }
-
-        .guide-line {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 2px;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(-50%);
-            pointer-events: none;
-        }
-
-        #next-monster {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            text-align: center;
-        }
-
-        .next-preview {
-            width: 50px;
-            height: 50px;
-            background: var(--panel-color);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            margin-top: 5px;
-        }
-    </style>
-</head>
-<body>
-
-<div id="game-container">
-    <div id="ui-layer">
-        <div class="score-box">
-            <span class="score-label">当前得分</span>
-            <span id="score" class="score-value">0</span>
-        </div>
-
-        <div id="next-monster">
-            <span class="score-label">下一个</span>
-            <div id="next-icon" class="next-preview">👾</div>
-        </div>
-    </div>
-
-    <div id="guide" class="guide-line"></div>
-
-    <div id="game-over">
-        <h2 style="font-size: 32px; margin-bottom: 10px;">游戏结束</h2>
-        <p>你的怪物军团达到了上限！</p>
-        <p style="font-size: 24px;">得分: <span id="final-score">0</span></p>
-        <button onclick="resetGame()">再来一局</button>
-    </div>
-</div>
-
-<script>
-    const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
-
-    // 游戏配置：怪物等级、名称、大小、得分
-    const MONSTER_TYPES = [
-        { level: 0, emoji: '👾', radius: 15, score: 2, color: '#a29bfe' },
-        { level: 1, emoji: '👻', radius: 25, score: 4, color: '#81ecec' },
-        { level: 2, emoji: '🤖', radius: 35, score: 8, color: '#55efc4' },
-        { level: 3, emoji: '👽', radius: 45, score: 16, color: '#ffeaa7' },
-        { level: 4, emoji: '👺', radius: 55, score: 32, color: '#fab1a0' },
-        { level: 5, emoji: '👹', radius: 65, score: 64, color: '#ff7675' },
-        { level: 6, emoji: '🤡', radius: 75, score: 128, color: '#fd79a8' },
-        { level: 7, emoji: '🐲', radius: 85, score: 256, color: '#6c5ce7' },
-        { level: 8, emoji: '🦄', radius: 95, score: 512, color: '#00cec9' },
-        { level: 9, emoji: '🌋', radius: 110, score: 1024, color: '#d63031' },
-        { level: 10, emoji: '⭐', radius: 130, score: 2048, color: '#e17055' }
-    ];
-
-    let engine, render, runner;
-    let container = document.getElementById('game-container');
-    let width = container.clientWidth;
-    let height = container.clientHeight;
-    let score = 0;
-    let nextLevel = 0;
-    let isGameOver = false;
-    let canClick = true;
-    let currentPreview = null;
-
-    function init() {
-        engine = Engine.create();
-        render = Render.create({
-            element: container,
-            engine: engine,
-            options: {
-                width: width,
-                height: height,
-                wireframes: false,
-                background: 'transparent'
-            }
-        });
-
-        // 边界
-        const ground = Bodies.rectangle(width / 2, height + 50, width, 100, { isStatic: true, render: { fillStyle: '#16213e' } });
-        const leftWall = Bodies.rectangle(-50, height / 2, 100, height, { isStatic: true });
-        const rightWall = Bodies.rectangle(width + 50, height / 2, 100, height, { isStatic: true });
-
-        Composite.add(engine.world, [ground, leftWall, rightWall]);
-
-        Render.run(render);
-        runner = Runner.create();
-        Runner.run(runner, engine);
-
-        setupEvents();
-        updateNextPreview();
-    }
-
-    function setupEvents() {
-        // 鼠标/触摸点击投放
-        container.addEventListener('pointerdown', (e) => {
-            if (!canClick || isGameOver) return;
-
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            dropMonster(x);
-        });
-
-        // 碰撞监测
-        Events.on(engine, 'collisionStart', (event) => {
-            event.pairs.forEach((pair) => {
-                const { bodyA, bodyB } = pair;
-
-                // 检查是否是相同的怪物碰撞
-                if (bodyA.monsterLevel !== undefined && bodyA.monsterLevel === bodyB.monsterLevel) {
-                    if (bodyA.monsterLevel < MONSTER_TYPES.length - 1) {
-                        handleMerge(bodyA, bodyB);
-                    }
-                }
-            });
-        });
-
-        // 游戏结束监测（越过顶部红线）
-        Events.on(engine, 'afterUpdate', () => {
-            if (isGameOver) return;
-
-            const bodies = Composite.allBodies(engine.world);
-            for (let body of bodies) {
-                if (body.isStatic) continue;
-                // 只有静止一段时间后且位置过高的才判输
-                if (body.position.y < 120 && body.velocity.y < 0.1 && body.createdAt && (Date.now() - body.createdAt > 1500)) {
-                    endGame();
-                    break;
-                }
-            }
-        });
-    }
-
-    function dropMonster(x) {
-        canClick = false;
-
-        // 限制边界
-        const levelData = MONSTER_TYPES[nextLevel];
-        const safeX = Math.max(levelData.radius, Math.min(width - levelData.radius, x));
-
-        const monster = createMonster(safeX, 80, nextLevel);
-        monster.createdAt = Date.now();
-
-        Composite.add(engine.world, monster);
-
-        // 冷却时间
-        setTimeout(() => {
-            canClick = true;
-            updateNextPreview();
-        }, 600);
-    }
-
-    function createMonster(x, y, level) {
-        const type = MONSTER_TYPES[level];
-        const body = Bodies.circle(x, y, type.radius, {
-            restitution: 0.3,
-            friction: 0.1,
-            monsterLevel: level,
-            render: {
-                fillStyle: type.color,
-                strokeStyle: '#ffffff',
-                lineWidth: 2
-            }
-        });
-
-        // 自定义绘制：在物理引擎渲染后添加 Emoji
-        body.render.sprite = {
-            render: (ctx) => {
-                ctx.font = `${type.radius * 1.5}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(type.emoji, 0, 0);
-            }
-        };
-
-        // 修改 Matter.js 默认渲染来支持 Emoji (Hack)
-        body.render.afterRender = function(ctx) {
-            ctx.save();
-            ctx.translate(body.position.x, body.position.y);
-            ctx.rotate(body.angle);
-            ctx.font = `${type.radius * 1.4}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(type.emoji, 0, 0);
-            ctx.restore();
-        };
-
-        return body;
-    }
-
-    function handleMerge(bodyA, bodyB) {
-        const newLevel = bodyA.monsterLevel + 1;
-        const posX = (bodyA.position.x + bodyB.position.x) / 2;
-        const posY = (bodyA.position.y + bodyB.position.y) / 2;
-
-        // 移除旧的
-        Composite.remove(engine.world, [bodyA, bodyB]);
-
-        // 增加分数
-        score += MONSTER_TYPES[newLevel].score;
-        document.getElementById('score').innerText = score;
-
-        // 创建进化后的怪物
-        const upgraded = createMonster(posX, posY, newLevel);
-        Composite.add(engine.world, upgraded);
-
-        // 播放一个小火花效果（模拟）
-        createEffect(posX, posY, MONSTER_TYPES[newLevel].color);
-    }
-
-    function updateNextPreview() {
-        nextLevel = Math.floor(Math.random() * 4); // 随机生成前4种
-        document.getElementById('next-icon').innerText = MONSTER_TYPES[nextLevel].emoji;
-    }
-
-    function createEffect(x, y, color) {
-        // 这里可以添加粒子效果，为了性能暂时简化
-    }
-
-    function endGame() {
-        isGameOver = true;
-        document.getElementById('game-over').style.display = 'block';
-        document.getElementById('final-score').innerText = score;
-    }
-
-    function resetGame() {
-        Composite.clear(engine.world, false);
-        // 重新添加边界
-        const ground = Bodies.rectangle(width / 2, height + 50, width, 100, { isStatic: true });
-        const leftWall = Bodies.rectangle(-50, height / 2, 100, height, { isStatic: true });
-        const rightWall = Bodies.rectangle(width + 50, height / 2, 100, height, { isStatic: true });
-        Composite.add(engine.world, [ground, leftWall, rightWall]);
-
-        score = 0;
-        document.getElementById('score').innerText = 0;
-        document.getElementById('game-over').style.display = 'none';
-        isGameOver = false;
-        canClick = true;
-        updateNextPreview();
-    }
-
-    // 辅助：重写 Render.world 以支持自定义绘制
-    function patchRender() {
-        const original = Render.bodies;
-        Render.bodies = function(render, bodies, context) {
-            original(render, bodies, context);
-            for (let i = 0; i < bodies.length; i++) {
-                if (bodies[i].render.afterRender) {
-                    bodies[i].render.afterRender(context);
-                }
-            }
-        };
-    }
-
-    window.onload = () => {
-        patchRender();
-        init();
+      } catch (err) {
+        console.error("Auth Error:", err);
+      }
     };
+    performAuth();
 
-    // 适配窗口大小变化
-    window.addEventListener('resize', () => {
-        width = container.clientWidth;
-        height = container.clientHeight;
-        render.canvas.width = width;
-        render.canvas.height = height;
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        setUser(u);
+        const shortId = u.uid.slice(-4).toUpperCase();
+        const colorIdx = u.uid.charCodeAt(0) % COLORS.length;
+        setIdentity({
+          name: `访客_${shortId}`,
+          color: COLORS[colorIdx]
+        });
+      }
     });
-</script>
+    return () => unsubscribe();
+  }, []);
 
-</body>
-</html>
+  // 2. 消息流同步 (遵循 Rule 1 & 2)
+  useEffect(() => {
+    if (!user) return;
+
+    // 严格遵循路径规则: /artifacts/{appId}/public/data/messages
+    const msgCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+
+    // 简单查询，内存排序 (遵循 Rule 2)
+    const q = query(msgCol);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      // 在内存中进行时间排序
+      const sorted = data.sort((a, b) => {
+        const timeA = a.timestamp?.toMillis() || 0;
+        const timeB = b.timestamp?.toMillis() || 0;
+        return timeA - timeB;
+      });
+
+      setMessages(sorted.slice(-100)); // 仅展示最近100条以保证性能
+    }, (error) => {
+      console.error("Snapshot Error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // 3. 自动滚动到底部
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // 4. 发送逻辑
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputValue.trim() || !user || isSending) return;
+
+    setIsSending(true);
+    const text = inputValue.trim();
+    setInputValue('');
+
+    try {
+      const msgCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+      await addDoc(msgCol, {
+        text,
+        senderName: identity.name,
+        senderColor: identity.color,
+        uid: user.uid,
+        timestamp: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Send Failed:", err);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-100 text-slate-800 antialiased">
+      {/* 顶部导航 */}
+      <header className="bg-white/80 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+            <MessageCircle className="text-white w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-bold text-lg leading-none">ALB Live</h1>
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-1">Anonymous Board</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span className="text-xs font-semibold text-green-700">实时在线</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+            <User className="w-4 h-4 text-slate-500" />
+            <span className="text-sm font-bold" style={{ color: identity.color }}>{identity.name || '登录中...'}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* 聊天区域 */}
+      <main
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6"
+      >
+        <div className="max-w-3xl mx-auto space-y-4">
+          {messages.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="inline-flex p-4 bg-white rounded-full mb-4 shadow-sm">
+                <Users className="w-8 h-8 text-slate-300" />
+              </div>
+              <p className="text-slate-400">广场空空如也，说点什么打破沉静吧</p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isMe = msg.uid === user?.uid;
+              return (
+                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div className="flex items-center gap-2 mb-1.5 px-1">
+                      {!isMe && <span className="text-xs font-bold" style={{ color: msg.senderColor }}>{msg.senderName}</span>}
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {msg.timestamp ? new Date(msg.timestamp.toMillis()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
+                      </span>
+                      {isMe && <span className="text-xs font-bold" style={{ color: msg.senderColor }}>{msg.senderName}</span>}
+                    </div>
+                    <div
+                      className={`px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed ${
+                        isMe
+                          ? 'bg-indigo-600 text-white rounded-tr-none'
+                          : 'bg-white text-slate-700 border border-slate-200 rounded-tl-none'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </main>
+
+      {/* 输入区域 */}
+      <footer className="p-4 bg-white border-t border-slate-200">
+        <form
+          onSubmit={sendMessage}
+          className="max-w-3xl mx-auto relative flex items-center"
+        >
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="输入你想说的话..."
+            className="w-full bg-slate-100 border-transparent rounded-2xl py-4 pl-5 pr-14 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-slate-700"
+          />
+          <button
+            type="submit"
+            disabled={!inputValue.trim() || isSending}
+            className="absolute right-2 p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:bg-slate-300 disabled:scale-95 transition-all shadow-md active:shadow-inner"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </form>
+        <div className="text-center mt-3">
+          <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1 font-medium">
+            <Wifi className="w-3 h-3" /> 端到端加密传输 · 阅后即焚(实验中) · 匿名公共流
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
