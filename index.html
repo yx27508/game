@@ -3,379 +3,423 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私人侦探事务所 - 合法持牌 · 政府认证 · 务实取证</title>
+    <title>私人侦探事务所 - 合法持牌 · 政府认证 · 全球取证</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
+        :root {
+            --brand-red: #dc2626;
+            --brand-red-dark: #991b1b;
+            --bg-dark: #0a0a0a;
+        }
+
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            background-color: #050505;
+            background-color: var(--bg-dark);
             color: #e2e8f0;
+            overflow-x: hidden;
         }
 
         .glass-card {
-            background: rgba(15, 15, 15, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(239, 68, 68, 0.1);
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(220, 38, 38, 0.3);
+            background: rgba(30, 30, 30, 0.8);
+            transform: translateY(-4px);
         }
 
         .hero-gradient {
-            background: linear-gradient(to bottom, rgba(5, 5, 5, 0.6), #050505),
-                        url('https://images.unsplash.com/photo-1516339901600-2e1a62d0edb4?q=80&w=2000&auto=format&fit=crop');
+            background: linear-gradient(to bottom, rgba(10, 10, 10, 0.7), var(--bg-dark)),
+                        url('https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=2000&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
         }
 
         .detective-accent {
-            color: #ef4444; /* Red-500 */
+            color: var(--brand-red);
         }
 
         .btn-primary {
-            background-color: #dc2626; /* Red-600 */
-            color: #ffffff;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.2);
             transition: all 0.3s ease;
         }
 
         .btn-primary:hover {
-            background-color: #b91c1c; /* Red-700 */
+            box-shadow: 0 8px 30px rgba(220, 38, 38, 0.4);
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
         }
 
-        .phone-grid div:hover {
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.05);
-        }
-
-        .case-tag {
-            background: rgba(220, 38, 38, 0.15);
-            color: #f87171;
-            padding: 2px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        /* Scrolling Banner Styles */
-        .notice-banner-container {
-            background: linear-gradient(90deg, #450a0a, #dc2626, #450a0a);
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 0.85rem;
-            padding: 8px 0;
-            overflow: hidden;
+        /* Marquee Animation */
+        .marquee {
             white-space: nowrap;
-            position: relative;
-            z-index: 60;
+            overflow: hidden;
+            display: flex;
         }
 
-        .scrolling-text {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 25s linear infinite;
-        }
-
-        .scrolling-text:hover {
-            animation-play-state: paused;
+        .marquee-content {
+            display: flex;
+            animation: marquee 40s linear infinite;
         }
 
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
+            100% { transform: translateX(-50%); }
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
+        /* Reveal Animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
         }
-        ::-webkit-scrollbar-track {
-            background: #050505;
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
         }
-        ::-webkit-scrollbar-thumb {
-            background: #450a0a;
-            border-radius: 4px;
+
+        /* Mobile Menu Overlay */
+        #mobile-menu-overlay {
+            clip-path: circle(0% at top right);
+            transition: clip-path 0.5s ease-in-out;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #dc2626;
+        #mobile-menu-overlay.open {
+            clip-path: circle(150% at top right);
         }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--brand-red); }
     </style>
 </head>
-<body>
+<body class="antialiased">
 
-    <!-- Target Audience Scrolling Banner -->
-    <div class="notice-banner-container">
-        <div class="scrolling-text uppercase tracking-widest text-xs md:text-sm">
-            【专享公告】目前仅面向中国客户提供全球调查及取证服务 —————— 合法持牌 · 政府认证 · 隐私保护 —————— 事务所面向全球诚征律师事务所战略合作。
+    <!-- Top Info Bar -->
+    <div class="fixed top-0 w-full z-[70] bg-red-700 text-white text-[10px] md:text-xs font-bold py-2 overflow-hidden border-b border-red-800">
+        <div class="marquee">
+            <div class="marquee-content px-4">
+                <span class="mx-8 uppercase tracking-widest">【法律告示】本事务所严守当地法律法规 · 仅面向中国籍及华裔客户提供全球调查取证服务 · 诚征战略合作伙伴 · 隐私保护等级：最高级 </span>
+                <span class="mx-8 uppercase tracking-widest">【法律告示】本事务所严守当地法律法规 · 仅面向中国籍及华裔客户提供全球调查取证服务 · 诚征战略合作伙伴 · 隐私保护等级：最高级 </span>
+            </div>
         </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="fixed w-full z-50 glass-card py-4 top-0 mt-[36px] border-b border-red-900/20">
+    <nav id="navbar" class="fixed w-full z-[60] py-4 transition-all duration-500 mt-8 md:mt-10">
         <div class="container mx-auto px-6 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="shield-alert" class="detective-accent w-8 h-8"></i>
+            <div class="flex items-center space-x-3 group cursor-pointer">
+                <div class="p-2 bg-red-600/10 rounded-lg border border-red-600/20 group-hover:bg-red-600/20 transition-colors">
+                    <i data-lucide="shield-half" class="detective-accent w-6 h-6"></i>
+                </div>
                 <div class="flex flex-col">
-                    <span class="text-xl font-bold tracking-wider italic leading-none text-white">私人侦探事务所</span>
-                    <span class="text-[10px] uppercase tracking-[0.2em] text-red-500 font-bold">Government Certified</span>
+                    <span class="text-xl font-black tracking-tighter text-white uppercase italic">Private <span class="text-red-600">Eye</span></span>
+                    <span class="text-[9px] uppercase tracking-[0.3em] text-gray-500 font-bold">Government Certified</span>
                 </div>
             </div>
-            <div class="hidden md:flex space-x-8 text-sm font-medium uppercase tracking-widest">
-                <a href="#home" class="hover:text-red-500 transition text-white">首页</a>
-                <a href="#services" class="hover:text-red-500 transition text-white">手段</a>
-                <a href="#founder" class="hover:text-red-500 transition text-white">创始人</a>
-                <a href="#cases" class="hover:text-red-500 transition text-white">案例</a>
-                <a href="#partnership" class="hover:text-red-500 transition font-bold text-red-400">合作</a>
-                <a href="#contact" class="hover:text-red-500 transition text-white">联系</a>
+
+            <!-- Desktop Menu -->
+            <div class="hidden lg:flex items-center space-x-10 text-[11px] font-bold uppercase tracking-[0.2em]">
+                <a href="#home" class="text-white hover:text-red-500 transition-colors">首 首页</a>
+                <a href="#services" class="text-white hover:text-red-500 transition-colors">调 调查</a>
+                <a href="#founder" class="text-white hover:text-red-500 transition-colors">核 核心</a>
+                <a href="#cases" class="text-white hover:text-red-500 transition-colors">案 案例</a>
+                <a href="#contact" class="px-5 py-2 border border-red-600/40 text-red-500 hover:bg-red-600 hover:text-white rounded-full transition-all">立即咨询</a>
             </div>
-            <button class="md:hidden">
-                <i data-lucide="menu" class="text-white"></i>
+
+            <!-- Mobile Menu Toggle -->
+            <button id="menu-toggle" class="lg:hidden text-white p-2 z-[80]">
+                <i data-lucide="menu" id="menu-icon" class="w-6 h-6"></i>
             </button>
         </div>
     </nav>
 
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black z-[75] flex flex-col items-center justify-center space-y-8 text-2xl font-bold uppercase tracking-widest">
+        <a href="#home" class="mobile-link text-white hover:text-red-600">首页</a>
+        <a href="#services" class="mobile-link text-white hover:text-red-600">手段</a>
+        <a href="#founder" class="mobile-link text-white hover:text-red-600">准则</a>
+        <a href="#cases" class="mobile-link text-white hover:text-red-600">案例</a>
+        <a href="#contact" class="mobile-link text-red-600">联系我们</a>
+    </div>
+
     <!-- Hero Section -->
-    <section id="home" class="hero-gradient h-screen flex items-center pt-20">
-        <div class="container mx-auto px-6 text-center md:text-left">
-            <div class="max-w-4xl mx-auto md:mx-0">
-                <div class="inline-block border border-red-500/50 px-4 py-1 rounded-full text-red-500 text-xs font-bold mb-6 bg-red-500/10 uppercase tracking-widest">
-                    <i data-lucide="shield-check" class="inline-block w-3 h-3 mr-1 mb-0.5"></i> 政府认证 · 合法持牌
+    <section id="home" class="hero-gradient min-h-screen flex items-center pt-24 relative overflow-hidden">
+        <!-- Decoration -->
+        <div class="absolute top-1/4 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-1/4 left-0 w-64 h-64 bg-red-900/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="max-w-4xl">
+                <div class="inline-flex items-center space-x-2 bg-red-950/30 border border-red-500/20 px-4 py-1.5 rounded-full mb-8 reveal">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                    <span class="text-red-500 text-[10px] font-black uppercase tracking-widest">Global Investigative Agency</span>
                 </div>
-                <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight text-white">
-                    务实调查手段<br>专属<span class="detective-accent">中国客户</span>
+
+                <h1 class="text-5xl md:text-8xl font-black mb-8 leading-none tracking-tighter reveal" style="transition-delay: 200ms;">
+                    真相不远，<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-400">唯实证</span>永恒。
                 </h1>
-                <p class="text-lg md:text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl font-light">
-                    事务所经政府认证且合法持牌，采用可靠方式，专为中国籍客户提供跨国追踪、核实及取证服务。
+
+                <p class="text-gray-400 text-lg md:text-xl mb-12 max-w-2xl font-light leading-relaxed reveal" style="transition-delay: 400ms;">
+                    我们是经政府认证、具备合法持牌资质的私人侦探机构。致力于通过合规、隐秘且高效的手段，为中国客户解决跨国背景调查、资产追踪及证据固定等核心诉求。
                 </p>
-                <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-4">
-                    <a href="#contact" class="btn-primary px-10 py-4 rounded-md font-bold text-center tracking-widest">
-                        匿名咨询
+
+                <div class="flex flex-col sm:flex-row gap-5 reveal" style="transition-delay: 600ms;">
+                    <a href="#contact" class="btn-primary px-10 py-5 rounded-xl font-bold text-center tracking-widest text-white">
+                        发起匿名咨询
                     </a>
-                    <a href="#founder" class="border border-red-600/30 hover:bg-red-600/5 px-10 py-4 rounded-md font-bold text-center transition tracking-widest text-red-500">
-                        核心力量
+                    <a href="#services" class="group px-10 py-5 rounded-xl font-bold text-center border border-white/10 hover:border-red-600/50 transition-all flex items-center justify-center space-x-2">
+                        <span>技术手段</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
                     </a>
                 </div>
             </div>
         </div>
+
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-20">
+            <i data-lucide="chevron-down" class="w-8 h-8"></i>
+        </div>
     </section>
 
-    <!-- Trust Badges -->
-    <div class="bg-red-600 text-white py-6 shadow-[0_0_30px_rgba(220,38,38,0.3)]">
-        <div class="container mx-auto px-6 flex flex-wrap justify-around items-center gap-8 text-sm md:text-base">
-            <div class="flex items-center space-x-2 font-bold uppercase tracking-tighter">
-                <i data-lucide="check-circle-2"></i>
-                <span>持牌机构</span>
+    <!-- Stats Bar -->
+    <div class="bg-zinc-950 border-y border-white/5 py-10">
+        <div class="container mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div class="text-center reveal">
+                <div class="text-3xl font-black text-white mb-1">12+</div>
+                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Years Experience</div>
             </div>
-            <div class="flex items-center space-x-2 font-bold uppercase tracking-tighter">
-                <i data-lucide="globe"></i>
-                <span>协作网络</span>
+            <div class="text-center reveal" style="transition-delay: 100ms;">
+                <div class="text-3xl font-black text-white mb-1">500+</div>
+                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Successful Cases</div>
             </div>
-            <div class="flex items-center space-x-2 font-bold uppercase tracking-tighter">
-                <i data-lucide="users"></i>
-                <span>专属服务</span>
+            <div class="text-center reveal" style="transition-delay: 200ms;">
+                <div class="text-3xl font-black text-white mb-1">24/7</div>
+                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Secure Support</div>
             </div>
-            <div class="flex items-center space-x-2 font-bold uppercase tracking-tighter">
-                <i data-lucide="lock"></i>
-                <span>隐私防护</span>
+            <div class="text-center reveal" style="transition-delay: 300ms;">
+                <div class="text-3xl font-black text-white mb-1">100%</div>
+                <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Confidentiality</div>
             </div>
         </div>
     </div>
 
     <!-- Services Section -->
-    <section id="services" class="py-24 bg-[#080808]">
+    <section id="services" class="py-32 bg-[#0a0a0a]">
         <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-bold mb-4 uppercase tracking-wider text-white">调查手段</h2>
-                <div class="w-20 h-1 bg-red-600 mx-auto"></div>
-                <p class="mt-6 text-gray-500 italic font-light tracking-wide">“唯求真相，确立实证。”</p>
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+                <div class="max-w-2xl reveal">
+                    <h2 class="text-red-600 font-bold text-sm tracking-[0.3em] uppercase mb-4 italic">// 我们的手段</h2>
+                    <h3 class="text-4xl md:text-5xl font-black text-white leading-tight">通过技术与资源的结合<br>还原事实本相</h3>
+                </div>
+                <div class="reveal">
+                    <p class="text-gray-500 italic max-w-xs text-sm border-l border-red-600/30 pl-4">“在谎言的迷雾中，我们寻找唯一的出口。”</p>
+                </div>
             </div>
 
             <div class="grid md:grid-cols-3 gap-8">
-                <div class="glass-card p-8 rounded-xl hover:translate-y-[-10px] transition duration-300 border-t-2 border-t-transparent hover:border-t-red-600">
-                    <i data-lucide="database" class="w-12 h-12 detective-accent mb-6"></i>
-                    <h3 class="text-xl font-bold mb-4 text-white">背景核实</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">利用合规渠道核实跨国人员履历及社会关系。</p>
+                <div class="glass-card p-10 rounded-2xl reveal" style="transition-delay: 100ms;">
+                    <div class="w-14 h-14 bg-red-600/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i data-lucide="search" class="text-red-500 w-7 h-7"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-4">跨国背景核实</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-6">针对个人或企业进行深度履历核实、社会关联度调查及信誉评估，确保合作或投资的安全底色。</p>
+                    <ul class="space-y-3 text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+                        <li class="flex items-center space-x-2"><i data-lucide="check" class="w-3 h-3 text-red-500"></i><span>身份真实性验证</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="check" class="w-3 h-3 text-red-500"></i><span>海外资产概况核实</span></li>
+                    </ul>
                 </div>
-                <div class="glass-card p-8 rounded-xl hover:translate-y-[-10px] transition duration-300 border-t-2 border-t-transparent hover:border-t-red-600">
-                    <i data-lucide="fingerprint" class="w-12 h-12 detective-accent mb-6"></i>
-                    <h3 class="text-xl font-bold mb-4 text-white">数据核对</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">追踪跨境网络侵权，协助固定电子证据。</p>
+
+                <div class="glass-card p-10 rounded-2xl reveal" style="transition-delay: 200ms;">
+                    <div class="w-14 h-14 bg-red-600/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i data-lucide="database" class="text-red-500 w-7 h-7"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-4">电子取证与追踪</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-6">利用尖端技术追踪网络侵权源头，固定跨境电子证据，为后续法律诉讼提供坚不可摧的数据支撑。</p>
+                    <ul class="space-y-3 text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+                        <li class="flex items-center space-x-2"><i data-lucide="check" class="w-3 h-3 text-red-500"></i><span>侵权链路追踪</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="check" class="w-3 h-3 text-red-500"></i><span>数据完整性固定</span></li>
+                    </ul>
                 </div>
-                <div class="glass-card p-8 rounded-xl hover:translate-y-[-10px] transition duration-300 border-t-2 border-t-transparent hover:border-t-red-600">
-                    <i data-lucide="crosshair" class="w-12 h-12 detective-accent mb-6"></i>
-                    <h3 class="text-xl font-bold mb-4 text-white">资产追踪</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">针对跨境债务，核实位置及资产概况。</p>
+
+                <div class="glass-card p-10 rounded-2xl reveal" style="transition-delay: 300ms;">
+                    <div class="w-14 h-14 bg-red-600/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i data-lucide="map-pin" class="text-red-500 w-7 h-7"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-4">债务人位置锁定</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed mb-6">针对失联债务人，通过全球协作网络定位其当前行踪及生活轨迹，协助债权人进行法律文书送达。</p>
+                    <ul class="space-y-3 text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+                        <li class="flex items-center space-x-2"><i data-lucide="check" class="w-3 h-3 text-red-500"></i><span>精准位置摸排</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="check" class="w-3 h-3 text-red-500"></i><span>常驻地社交核查</span></li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Founder Section -->
-    <section id="founder" class="py-24 bg-[#050505] relative overflow-hidden">
+    <!-- Founder Section (CA) -->
+    <section id="founder" class="py-32 bg-black relative overflow-hidden">
         <div class="container mx-auto px-6">
-            <div class="flex flex-col lg:flex-row items-center gap-16">
-                <div class="lg:w-2/5 relative">
-                    <div class="w-64 h-64 md:w-80 md:h-80 mx-auto bg-gradient-to-tr from-red-900/20 to-black border-2 border-red-600/30 rounded-full flex items-center justify-center relative overflow-hidden group shadow-[0_0_50px_rgba(220,38,38,0.1)]">
-                        <i data-lucide="user-secret" class="w-32 h-32 text-red-600 opacity-60 transition duration-700"></i>
-                        <div class="absolute inset-0 bg-black/50 transition duration-700"></div>
-                    </div>
-                </div>
-
-                <div class="lg:w-3/5 text-center lg:text-left text-slate-400">
-                    <div class="inline-block border-l-2 border-red-600 pl-4 mb-6">
-                        <h2 class="text-2xl md:text-4xl font-bold uppercase tracking-widest text-white italic">执业准则</h2>
-                    </div>
-                    <h3 class="text-xl md:text-2xl font-bold mb-6 text-red-500 tracking-tight">CA <span class="text-gray-700 mx-2">|</span> 匿名调查者</h3>
-
-                    <p class="text-gray-500 text-lg leading-relaxed mb-8 font-light italic">
-                        “修身律己，恪守本分。受人之托，忠人之事。”
-                    </p>
-
-                    <div class="space-y-4 text-gray-500 text-sm md:text-base leading-relaxed">
-                        <p>
-                            <span class="text-red-500/80 font-bold">CA</span> 为隐世武林背景，将修身心得应用于调查事务。出于职业性质与隐私考量，仅以代号行世。
-                        </p>
-                        <p>
-                            事务所务求实效，慎终如始。对涉及同胞利益之案件，CA 必尽心力。
-                        </p>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 pt-6">
-                            <div class="bg-red-900/5 border border-red-900/20 p-2 rounded text-center">
-                                <span class="text-red-500 font-bold block text-sm">绝对</span>
-                                <span class="text-[9px] uppercase tracking-wider">匿名</span>
-                            </div>
-                            <div class="bg-red-900/5 border border-red-900/20 p-2 rounded text-center">
-                                <span class="text-red-500 font-bold block text-sm">稳重</span>
-                                <span class="text-[9px] uppercase tracking-wider">务实</span>
-                            </div>
-                            <div class="bg-red-900/5 border border-red-900/20 p-2 rounded text-center col-span-2 md:col-span-1">
-                                <span class="text-red-500 font-bold block text-sm">严谨</span>
-                                <span class="text-[9px] uppercase tracking-wider">操守</span>
+            <div class="flex flex-col lg:flex-row items-center gap-20">
+                <div class="lg:w-1/2 relative reveal">
+                    <div class="aspect-square max-w-md mx-auto relative group">
+                        <div class="absolute inset-0 bg-red-600/20 rounded-3xl blur-3xl group-hover:bg-red-600/30 transition-all duration-700"></div>
+                        <div class="relative w-full h-full bg-zinc-900 border border-white/10 rounded-3xl overflow-hidden flex items-center justify-center">
+                            <i data-lucide="user-secret" class="w-48 h-48 text-red-600/40 group-hover:scale-110 transition-transform duration-1000"></i>
+                            <div class="absolute bottom-6 left-6 right-6 p-4 glass-card rounded-xl">
+                                <p class="text-[10px] text-red-500 font-bold uppercase tracking-[0.4em] mb-1">Professional Profile</p>
+                                <p class="text-white font-bold tracking-widest text-lg">代号：CA / 核心调查员</p>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Process Section -->
-    <section id="process" class="py-24 bg-[#050505] border-y border-red-900/10">
-        <div class="container mx-auto px-6 text-center">
-            <h2 class="text-3xl md:text-5xl font-bold mb-4 uppercase tracking-widest text-white">取证流程</h2>
-            <div class="grid md:grid-cols-4 gap-8 relative mt-20">
-                <div class="hidden md:block absolute top-1/2 left-0 w-full h-px bg-red-900/30 z-0"></div>
-                <div class="relative z-10 flex flex-col items-center group">
-                    <div class="w-16 h-16 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-2xl mb-6 shadow-lg transition">1</div>
-                    <h4 class="text-lg font-bold text-white">咨询</h4>
-                </div>
-                <div class="relative z-10 flex flex-col items-center group">
-                    <div class="w-16 h-16 rounded-full bg-black text-red-500 border-2 border-red-600 flex items-center justify-center font-bold text-2xl mb-6 shadow-lg transition">2</div>
-                    <h4 class="text-lg font-bold text-white">协议</h4>
-                </div>
-                <div class="relative z-10 flex flex-col items-center group">
-                    <div class="w-16 h-16 rounded-full bg-black text-red-500 border-2 border-red-600 flex items-center justify-center font-bold text-2xl mb-6 shadow-lg transition">3</div>
-                    <h4 class="text-lg font-bold text-white">执行</h4>
-                </div>
-                <div class="relative z-10 flex flex-col items-center group">
-                    <div class="w-16 h-16 rounded-full bg-black text-red-500 border-2 border-red-600 flex items-center justify-center font-bold text-2xl mb-6 shadow-lg transition">4</div>
-                    <h4 class="text-lg font-bold text-white">交付</h4>
+                <div class="lg:w-1/2 reveal" style="transition-delay: 200ms;">
+                    <h2 class="text-red-600 font-bold text-sm tracking-[0.3em] uppercase mb-4 italic">// 执业准则</h2>
+                    <h3 class="text-4xl font-black text-white mb-8 italic">“修身律己，忠人之事。”</h3>
+
+                    <div class="space-y-6 text-gray-400 text-lg leading-relaxed font-light">
+                        <p>
+                            <span class="text-white font-bold">CA</span> 深耕调查领域多年，拥有独特的隐世背景，将极高的自律精神与现代取证技术相融合。
+                        </p>
+                        <p>
+                            作为事务所的核心力量，CA 坚持对每一份委托进行最严格的保密。其执业逻辑在于：<span class="text-red-500 italic">不仅提供结果，更提供足以在法庭立足的合规实证。</span>
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mt-12">
+                        <div class="p-4 border border-white/5 bg-zinc-900/50 rounded-xl">
+                            <div class="text-red-500 font-black text-xl mb-1 italic">SILENT</div>
+                            <div class="text-[9px] uppercase tracking-widest text-gray-500">极高隐私权重</div>
+                        </div>
+                        <div class="p-4 border border-white/5 bg-zinc-900/50 rounded-xl">
+                            <div class="text-red-500 font-black text-xl mb-1 italic">PRECISE</div>
+                            <div class="text-[9px] uppercase tracking-widest text-gray-500">毫秒级数据核对</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Cases Section -->
-    <section id="cases" class="py-24 bg-[#080808]">
-        <div class="container mx-auto px-6 text-white text-center">
-            <h2 class="text-3xl md:text-5xl font-bold mb-4 uppercase tracking-wider">成功案例</h2>
-            <div class="w-20 h-1 bg-red-600 mx-auto mb-16"></div>
-
-            <div class="grid md:grid-cols-2 gap-12 text-left">
-                <div class="glass-card p-10 rounded-2xl relative overflow-hidden group border-r border-red-900/30 transition-all duration-500">
-                    <div class="case-tag mb-6 inline-block text-[10px]">跨境调查</div>
-                    <h3 class="text-2xl font-bold mb-8 detective-accent">揭露造假案例</h3>
-                    <div class="space-y-6 relative z-10 text-sm text-slate-400">
-                        <p class="leading-relaxed">目标在海外侵害权益后潜逃。事务所核实其背景，固定证据。事后目标受到相应追责。</p>
-                        <div class="pt-6 border-t border-red-900/20 text-red-500 font-bold uppercase tracking-widest">结案</div>
-                    </div>
-                </div>
-
-                <div class="glass-card p-10 rounded-2xl relative overflow-hidden group border-r border-red-900/30 transition-all duration-500">
-                    <div class="case-tag mb-6 inline-block text-[10px]">债务核实</div>
-                    <h3 class="text-2xl font-bold mb-8 detective-accent">身份核实案例</h3>
-                    <div class="space-y-6 relative z-10 text-sm text-slate-400">
-                        <p class="leading-relaxed">借款人逃匿。事务所核实其真实身份。债权人已凭此启动司法程序。</p>
-                        <div class="pt-6 border-t border-red-900/20 text-red-500 font-bold uppercase tracking-widest">司法阶段</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Partnership Section -->
-    <section id="partnership" class="py-24 bg-[#050505]">
+    <section id="cases" class="py-32 bg-[#0a0a0a]">
         <div class="container mx-auto px-6">
-            <div class="glass-card p-12 md:p-16 rounded-3xl border border-red-900/20 text-center">
-                <i data-lucide="handshake" class="w-16 h-16 detective-accent mx-auto mb-8"></i>
-                <h2 class="text-3xl md:text-4xl font-bold mb-6 uppercase tracking-widest text-white">律所合作</h2>
-                <div class="w-24 h-1 bg-red-600 mx-auto mb-10"></div>
-                <p class="text-gray-500 text-lg max-w-4xl mx-auto leading-relaxed mb-12 font-light">
-                    事务所诚邀顶尖律所建立长期合作，共同为客户提供跨境事实核实及法律支持。
-                </p>
-                <div class="mt-12">
-                    <a href="mailto:peppldx@proton.me?subject=合作洽谈" class="inline-block border border-red-600 px-10 py-4 rounded-full font-bold text-red-500 hover:bg-red-600 hover:text-white transition duration-500 tracking-widest text-sm">
-                        洽谈合作
-                    </a>
+            <div class="text-center mb-20 reveal">
+                <h2 class="text-red-600 font-bold text-sm tracking-[0.3em] uppercase mb-4">Case Studies</h2>
+                <h3 class="text-4xl md:text-5xl font-black text-white">实战成果展示</h3>
+                <div class="w-16 h-1 bg-red-600 mx-auto mt-6"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-10">
+                <div class="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-white/5 reveal" style="transition-delay: 100ms;">
+                    <div class="p-10 flex flex-col h-full">
+                        <div class="flex justify-between items-start mb-10">
+                            <span class="px-3 py-1 bg-red-600/10 text-red-500 text-[10px] font-bold uppercase rounded-md tracking-widest">跨境反欺诈</span>
+                            <span class="text-gray-600 text-[10px] uppercase font-bold tracking-widest">Completed 2023</span>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-6 group-hover:text-red-500 transition-colors">海外虚假背景揭露</h4>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">
+                            某跨国项目中，对方宣称拥有千万级资产。通过我们对该主体在北美及欧洲的财务节点穿透，发现其实际为离岸空壳公司。为客户挽回数百万美元投资风险。
+                        </p>
+                        <div class="pt-6 border-t border-white/5 flex items-center text-xs font-bold text-red-500 uppercase tracking-[0.2em]">
+                            <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> 已移交律所处理
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-white/5 reveal" style="transition-delay: 200ms;">
+                    <div class="p-10 flex flex-col h-full">
+                        <div class="flex justify-between items-start mb-10">
+                            <span class="px-3 py-1 bg-red-600/10 text-red-500 text-[10px] font-bold uppercase rounded-md tracking-widest">资产核实</span>
+                            <span class="text-gray-600 text-[10px] uppercase font-bold tracking-widest">In Progress</span>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-6 group-hover:text-red-500 transition-colors">高净值债务人行踪定位</h4>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-10 flex-grow">
+                            债务人潜逃东南亚，通过多层伪装试图隐匿行踪。我们利用社交网络溯源及当地资源网络，在14天内锁定了其藏身公寓，协助债权人成功送达法律文件。
+                        </p>
+                        <div class="pt-6 border-t border-white/5 flex items-center text-xs font-bold text-red-500 uppercase tracking-[0.2em]">
+                            <i data-lucide="clock" class="w-4 h-4 mr-2"></i> 司法执行阶段
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="py-24 bg-[#050505] relative overflow-hidden">
-        <div class="container mx-auto px-6 text-white text-center">
-            <h2 class="text-4xl md:text-5xl font-bold mb-8 uppercase tracking-widest">联系</h2>
-            <p class="text-gray-500 mb-16 font-light">
-                仅面向中国客户。请通过以下方式预约。
-            </p>
+    <!-- Contact & Partnership -->
+    <section id="contact" class="py-32 bg-black relative">
+        <div class="container mx-auto px-6">
+            <div class="glass-card rounded-[40px] p-10 md:p-20 overflow-hidden relative">
+                <!-- BG Decoration -->
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-red-600/10 rounded-full blur-3xl"></div>
 
-            <div class="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto text-sm">
-                <div class="glass-card p-8 rounded-2xl text-left border-t-2 border-t-red-600">
-                    <div class="flex items-center space-x-3 mb-8">
-                        <i data-lucide="phone" class="detective-accent w-5 h-5"></i>
-                        <h3 class="text-lg font-bold uppercase text-white">热线</h3>
-                    </div>
-                    <div class="space-y-4 font-mono text-slate-400">
-                        <div class="flex justify-between items-center py-2 border-b border-white/5">
-                            <span>北美/USA</span>
-                            <span class="text-red-500">+1 501 397 0151</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-white/5">
-                            <span>国际/INTL</span>
-                            <span class="text-red-500">+1 812 213 7750</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-white/5">
-                            <span>欧洲/BEL</span>
-                            <span class="text-red-500">+32 460 227 695</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2">
-                            <span>欧盟/FRA</span>
-                            <span class="text-red-500">+33 7 55 53 14 38</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="grid lg:grid-cols-2 gap-20 relative z-10">
+                    <div class="reveal">
+                        <h2 class="text-red-600 font-bold text-sm tracking-[0.3em] uppercase mb-6 italic">// 联系我们</h2>
+                        <h3 class="text-4xl md:text-5xl font-black text-white mb-10 leading-tight">准备好探寻<br>真相了吗？</h3>
 
-                <div class="glass-card p-8 rounded-2xl text-left border-t-2 border-t-red-600 flex flex-col justify-center">
-                    <div class="flex items-center space-x-3 mb-8">
-                        <i data-lucide="mail" class="detective-accent w-5 h-5"></i>
-                        <h3 class="text-lg font-bold uppercase text-white">邮箱</h3>
+                        <div class="space-y-8">
+                            <div class="flex items-start space-x-5">
+                                <div class="w-12 h-12 bg-red-600/10 rounded-full flex items-center justify-center shrink-0">
+                                    <i data-lucide="mail" class="text-red-500 w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">Secure Email</p>
+                                    <a href="mailto:peppldx@proton.me" class="text-xl md:text-2xl font-bold text-white hover:text-red-500 transition-colors">peppldx@proton.me</a>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-5">
+                                <div class="w-12 h-12 bg-red-600/10 rounded-full flex items-center justify-center shrink-0">
+                                    <i data-lucide="phone" class="text-red-500 w-5 h-5"></i>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                                    <div>
+                                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">USA / North America</p>
+                                        <p class="text-white font-mono font-bold">+1 501 397 0151</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">European Union</p>
+                                        <p class="text-white font-mono font-bold">+33 7 55 53 14 38</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-16 pt-10 border-t border-white/5 flex flex-wrap gap-8">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-red-500"></i>
+                                <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400">政府认证机构</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="lock" class="w-4 h-4 text-red-500"></i>
+                                <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400">端到端隐私加密</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <a href="mailto:peppldx@proton.me" class="text-xl md:text-2xl font-bold text-white hover:text-red-500 transition underline decoration-red-600/30 block mb-4">
-                            peppldx@proton.me
-                        </a>
-                        <p class="text-[9px] text-gray-700 uppercase tracking-widest">Authorized Channel Only</p>
+
+                    <div class="bg-zinc-950/50 p-8 md:p-12 rounded-3xl border border-white/5 reveal" style="transition-delay: 200ms;">
+                        <h4 class="text-xl font-bold text-white mb-6">战略合作洽谈</h4>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                            事务所诚邀具有跨境业务背景的律师事务所建立深度协作。我们可以作为您的海外“调查眼”，为您提供扎实的线下证据支撑。
+                        </p>
+                        <form class="space-y-4" onsubmit="event.preventDefault();">
+                            <input type="text" placeholder="您的称呼 / 律所名称" class="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-red-600 transition-all">
+                            <textarea placeholder="初步合作意向描述" rows="4" class="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-red-600 transition-all"></textarea>
+                            <button class="w-full btn-primary py-4 rounded-xl font-bold uppercase tracking-widest text-xs">提交合作意愿</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -383,33 +427,88 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-black py-16 border-t border-red-900/10 text-white">
-        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="shield-alert" class="detective-accent w-6 h-6"></i>
-                <span class="text-xl font-bold tracking-tighter italic uppercase">私人侦探事务所</span>
+    <footer class="bg-black py-20 border-t border-white/5">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-10 text-center md:text-left">
+                <div>
+                    <div class="flex items-center justify-center md:justify-start space-x-3 mb-6">
+                        <i data-lucide="shield-half" class="detective-accent w-6 h-6"></i>
+                        <span class="text-xl font-black tracking-tighter text-white uppercase italic">Private <span class="text-red-600">Eye</span></span>
+                    </div>
+                    <p class="text-gray-600 text-[10px] uppercase tracking-[0.2em] font-bold">© 2024 Private Eye Investigative Agency. All Rights Reserved.</p>
+                </div>
+
+                <div class="flex space-x-10 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors">Legal Terms</a>
+                    <a href="#" class="hover:text-white transition-colors">Compliance</a>
+                </div>
             </div>
-            <div class="text-[9px] text-gray-800 text-center uppercase tracking-widest">
-                仅限中国客户。遵循法律标准。
-            </div>
-            <div class="flex space-x-6">
-                <a href="mailto:peppldx@proton.me" class="text-gray-700 hover:text-red-500"><i data-lucide="mail" class="w-5 h-5"></i></a>
+
+            <div class="mt-20 text-center">
+                <p class="text-[9px] text-zinc-800 uppercase tracking-[0.5em] font-bold max-w-2xl mx-auto leading-loose">
+                    注意：本网站所含内容仅用于信息展示。所有调查行为均在当地法律允许的框架内进行。我们不接受任何非法用途的委托请求。
+                </p>
             </div>
         </div>
     </footer>
 
     <script>
+        // Initialize Lucide Icons
         lucide.createIcons();
-        const observer = new IntersectionObserver((entries) => {
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-black/80', 'backdrop-blur-xl', 'border-b', 'border-white/5', 'py-3');
+                navbar.classList.remove('py-4');
+            } else {
+                navbar.classList.remove('bg-black/80', 'backdrop-blur-xl', 'border-b', 'border-white/5', 'py-3');
+                navbar.classList.add('py-4');
+            }
+        });
+
+        // Mobile Menu Logic
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu-overlay');
+        const menuIcon = document.getElementById('menu-icon');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        function toggleMenu() {
+            const isOpen = mobileMenu.classList.toggle('open');
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+            menuIcon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
+            lucide.createIcons();
+        }
+
+        menuToggle.addEventListener('click', toggleMenu);
+        mobileLinks.forEach(link => link.addEventListener('click', toggleMenu));
+
+        // Reveal animations on scroll
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.add('active');
                 }
             });
-        }, { threshold: 0.1 });
-        document.querySelectorAll('section, .glass-card').forEach(el => {
-            el.classList.add('transition', 'duration-1000', 'opacity-0', 'translate-y-10');
-            observer.observe(el);
+        }, { threshold: 0.15 });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Smooth scroll for anchors
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    window.scrollTo({
+                        top: target.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
         });
     </script>
 </body>
