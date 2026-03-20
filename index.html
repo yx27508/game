@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Agency | 核心调查</title>
+    <title>CA私人侦探事务所 | 核心调查</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -51,6 +51,25 @@
         @keyframes scan {
             0% { transform: translateY(-10vh); }
             100% { transform: translateY(110vh); }
+        }
+
+        /* 顶部跑马灯动画 */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+
+        .marquee-content {
+            display: flex;
+            animation: marquee-scroll 40s linear infinite;
+            min-width: 100%;
+        }
+
+        @keyframes marquee-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
         /* 核心动效卡片 */
@@ -119,9 +138,43 @@
     <div class="bg-grid"></div>
     <div class="scan-line"></div>
 
-    <!-- 顶部状态栏 -->
-    <div class="fixed top-0 w-full z-[110] bg-red-600 text-white py-1.5 text-[10px] font-black uppercase tracking-[0.4em] text-center shadow-[0_0_20px_rgba(255,0,0,0.5)]">
-        Live Status: Operation Worldwide · Authorized Channel Only
+    <!-- 顶部动态滚动状态栏 (多语言版) -->
+    <div class="fixed top-0 w-full z-[110] bg-red-600 text-white py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] overflow-hidden shadow-[0_0_20px_rgba(255,0,0,0.5)]">
+        <div class="marquee-container">
+            <div class="marquee-content">
+                <!-- 原始版本 -->
+                <span class="mx-8">Live Status: Operation Worldwide · Authorized Channel Only</span>
+                <span class="mx-8 text-black/50">|</span>
+                <!-- 中文版 -->
+                <span class="mx-8">实时状态：全球运行 · 仅限授权渠道</span>
+                <span class="mx-8 text-black/50">|</span>
+                <!-- 法语版 -->
+                <span class="mx-8">Statut : Opération mondiale · Canal autorisé uniquement</span>
+                <span class="mx-8 text-black/50">|</span>
+                <!-- 日语版 -->
+                <span class="mx-8">ライブステータス：世界中で稼働中 · 認可されたチャネルのみ</span>
+                <span class="mx-8 text-black/50">|</span>
+                <!-- 西班牙语版 -->
+                <span class="mx-8">Estado en vivo: Operación mundial · Canal autorizado solamente</span>
+                <span class="mx-8 text-black/50">|</span>
+                <!-- 德语版 -->
+                <span class="mx-8">Live-Status: Weltweiter Betrieb · Nur autorisierter Kanal</span>
+                <span class="mx-8 text-black/50">|</span>
+
+                <!-- 重复以实现无缝滚动 -->
+                <span class="mx-8">Live Status: Operation Worldwide · Authorized Channel Only</span>
+                <span class="mx-8 text-black/50">|</span>
+                <span class="mx-8">实时状态：全球运行 · 仅限授权渠道</span>
+                <span class="mx-8 text-black/50">|</span>
+                <span class="mx-8">Statut : Opération mondiale · Canal autorisé uniquement</span>
+                <span class="mx-8 text-black/50">|</span>
+                <span class="mx-8">ライブステータス：世界中で稼働中 · 認可されたチャネルのみ</span>
+                <span class="mx-8 text-black/50">|</span>
+                <span class="mx-8">Estado en vivo: Operación mundial · Canal autorizado solamente</span>
+                <span class="mx-8 text-black/50">|</span>
+                <span class="mx-8">Live-Status: Weltweiter Betrieb · Nur autorisierter Kanal</span>
+            </div>
+        </div>
     </div>
 
     <!-- 极简导航 -->
@@ -131,7 +184,7 @@
                 <div class="w-8 h-8 bg-red-600 flex items-center justify-center animate-pulse">
                     <i data-lucide="shield" class="text-white w-5 h-5"></i>
                 </div>
-                <span class="font-black text-xl uppercase italic tracking-tighter">Private <span class="text-red-600">Eye</span></span>
+                <span class="font-black text-xl uppercase italic tracking-tighter">CA <span class="text-red-600">私人侦探事务所</span></span>
             </div>
             <div class="flex space-x-8 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                 <a href="#services" class="hover:text-red-600 transition">业务</a>
@@ -175,7 +228,7 @@
         </div>
     </section>
 
-    <!-- Agent 模块 (极简修正) -->
+    <!-- Agent 模块 (Agent: CA) -->
     <section id="about" class="max-w-6xl mx-auto px-6 py-40 border-y border-white/5">
         <div class="text-center reveal">
             <p class="text-[10px] text-red-600 font-black uppercase tracking-[0.5em] mb-4">Core Investigator</p>
@@ -233,7 +286,7 @@
         <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-[9px] font-black uppercase tracking-widest text-zinc-800">
             <div class="flex items-center">
                 <i data-lucide="shield" class="w-3 h-3 mr-2 text-red-600"></i>
-                © 2024 Private Agency
+                © 2024 CA私人侦探事务所
             </div>
             <div>Legal Compliance · Chinese Clients Only</div>
         </div>
