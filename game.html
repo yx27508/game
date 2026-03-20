@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DARK CORE | 全球特种业务监测</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        :root {
+            --primary-red: #ff0000;
+            --bg-black: #000000;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-black);
+            color: #ffffff;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+        }
+
+        /* 1. 核心视觉语境：雷达扫描与网格 */
+        .radar-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-red), transparent);
+            box-shadow: 0 0 15px var(--primary-red);
+            animation: scan 4s linear infinite;
+            z-index: 11;
+            opacity: 0.5;
+        }
+
+        @keyframes scan {
+            from { transform: translateY(-100vh); }
+            to { transform: translateY(100vh); }
+        }
+
+        /* 2. 霓虹光晕效果 */
+        .glow-red {
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+        }
+
+        /* 3. 跑马灯动画 */
+        .marquee {
+            display: flex;
+            overflow: hidden;
+            user-select: none;
+            gap: 2rem;
+            background: rgba(255, 0, 0, 0.1);
+            border-bottom: 1px solid var(--primary-red);
+        }
+
+        .marquee-content {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-around;
+            min-width: 100%;
+            gap: 2rem;
+            animation: scroll 30s linear infinite;
+        }
+
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-100%); }
+        }
+
+        /* 隐藏滚动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* 地球标签样式 */
+        .ops-label {
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .ops-label:hover {
+            transform: scale(1.2);
+            filter: brightness(1.5);
+        }
+
+        /* 修复：调整滤镜使地球更亮、更清晰 */
+        #globeViz {
+            width: 100vw;
+            height: 100vh;
+            filter: saturate(1.2) contrast(1.1) brightness(1.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 动态沉浸背景 -->
+    <div class="radar-grid"></div>
+    <div class="scan-line"></div>
+
+    <!-- 顶部多语言动态滚动栏 -->
+    <div class="fixed top-0 left-0 w-full z-[60] marquee py-1">
+        <div class="marquee-content text-[10px] tracking-[0.3em] font-bold py-1">
+            <span>SECURE CONNECTION ESTABLISHED...</span>
+            <span>AGENT IDENTIFIER: CA-7712</span>
+            <span>STATUS: OPERATIONAL</span>
+            <span>DATA ENCRYPTION: AES-256</span>
+            <span>位置：全球业务实时监测中</span>
+            <span>WARNING: UNAUTHORIZED ACCESS PROHIBITED</span>
+            <span>STATUS: 24/7 SURVEILLANCE ACTIVE</span>
+        </div>
+        <div class="marquee-content text-[10px] tracking-[0.3em] font-bold py-1" aria-hidden="true">
+            <span>SECURE CONNECTION ESTABLISHED...</span>
+            <span>AGENT IDENTIFIER: CA-7712</span>
+            <span>STATUS: OPERATIONAL</span>
+            <span>DATA ENCRYPTION: AES-256</span>
+            <span>位置：全球业务实时监测中</span>
+            <span>WARNING: UNAUTHORIZED ACCESS PROHIBITED</span>
+            <span>STATUS: 24/7 SURVEILLANCE ACTIVE</span>
+        </div>
+    </div>
+
+    <!-- 3D 渲染容器 -->
+    <div id="globeViz"></div>
+
+    <!-- 左侧：极简主义监控索引 -->
+    <div class="fixed top-12 left-8 bottom-8 w-72 bg-black/80 backdrop-blur-md border-l border-red-600/50 flex flex-col z-50 overflow-hidden">
+        <div class="p-6 border-b border-red-600/30">
+            <div class="flex items-center gap-3 mb-6 animate-pulse">
+                <div class="w-3 h-3 bg-red-600 rounded-full shadow-[0_0_10px_#ff0000]"></div>
+                <h1 class="text-sm font-black italic tracking-widest glow-red">SYSTEM OPS</h1>
+            </div>
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="// SEARCH_DATABASE"
+                    class="w-full bg-red-950/20 border border-red-900/50 rounded-none py-2 px-3 text-[10px] tracking-widest focus:outline-none focus:border-red-600 transition-colors placeholder:text-red-900">
+            </div>
+        </div>
+
+        <div class="px-6 py-2 bg-red-600/10 text-[9px] font-bold tracking-widest text-red-500">
+            ACTIVE_SESSIONS
+        </div>
+
+        <div id="countryList" class="flex-1 overflow-y-auto p-4 space-y-1 no-scrollbar">
+            <!-- 列表项 -->
+        </div>
+
+        <div class="p-4 bg-red-950/10 border-t border-red-900/30">
+            <div class="flex justify-between items-center text-[9px] tracking-tighter text-red-900">
+                <span>TERM: VT-100</span>
+                <span>SECURE NODE: 0x88FF</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧：详情面板 -->
+    <div id="detailPanel" class="fixed top-12 right-8 w-80 bg-black/90 border border-red-600/50 p-8 z-50 transform translate-x-[150%] transition-transform duration-700 shadow-[0_0_50px_rgba(0,0,0,1)]">
+        <button id="closeDetail" class="absolute top-4 right-4 text-red-600 hover:text-white">
+            <i data-lucide="crosshair" class="w-4 h-4"></i>
+        </button>
+
+        <div id="detailContent">
+            <!-- 动态内容 -->
+        </div>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <div class="fixed bottom-8 left-1/2 -translate-x-1/2 flex gap-8 z-40">
+        <div class="flex items-center gap-2">
+            <span class="text-[9px] font-bold tracking-widest text-red-900">SECURE CHANNELS:</span>
+            <div class="flex gap-2">
+                <span class="w-2 h-2 bg-red-600 shadow-[0_0_5px_#ff0000]"></span>
+                <span class="w-2 h-2 bg-red-900"></span>
+                <span class="w-2 h-2 bg-red-900"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const countryData = [
+            { name: "NORTH AMERICA", code: "US", lat: 37.09, lng: -95.71, cases: 432, risk: "CRITICAL", agent: "CA-01" },
+            { name: "EAST ASIA", code: "CN", lat: 35.86, lng: 104.19, cases: 125, risk: "MONITOR", agent: "CA-09" },
+            { name: "SOUTH AMERICA", code: "BR", lat: -14.23, lng: -51.92, cases: 215, risk: "HIGH", agent: "CA-04" },
+            { name: "OCEANIA", code: "AU", lat: -25.27, lng: 133.77, cases: 42, risk: "STABLE", agent: "CA-12" },
+            { name: "WESTERN EUROPE", code: "GB", lat: 55.37, lng: -3.43, cases: 189, risk: "HIGH", agent: "CA-02" },
+            { name: "NORTH EURASIA", code: "RU", lat: 61.52, lng: 105.31, cases: 312, risk: "HIGH", agent: "CA-07" }
+        ];
+
+        // 初始化 Globe.gl
+        // 调整：改用 earth-night.jpg 以获得更好的对比度，并调整了大气层亮度
+        const globe = Globe()
+            (document.getElementById('globeViz'))
+            .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+            .backgroundColor('rgba(0,0,0,0)')
+            .showAtmosphere(true)
+            .atmosphereColor('#ff0000')
+            .atmosphereAltitude(0.25)
+            .htmlElementsData(countryData)
+            .htmlElement(d => {
+                const el = document.createElement('div');
+                const isCritical = d.risk === 'CRITICAL';
+                el.className = `ops-label`;
+                el.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <div class="px-2 py-0.5 border ${isCritical ? 'border-red-600 bg-red-600/20' : 'border-red-900 bg-black/80'} text-[8px] font-black tracking-tighter glow-red">
+                            ${d.name} // ${d.cases}
+                        </div>
+                        <div class="w-[1px] h-6 bg-gradient-to-b from-red-600 to-transparent"></div>
+                    </div>
+                `;
+                el.onclick = () => focusCountry(d);
+                return el;
+            })
+            .onGlobeClick(closeDetailPanel);
+
+        // 设置环境光感
+        globe.controls().autoRotate = true;
+        globe.controls().autoRotateSpeed = 0.3;
+
+        function focusCountry(d) {
+            globe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.8 }, 1200);
+            globe.controls().autoRotate = false;
+            showDetailPanel(d);
+            updateListHighlight(d.code);
+        }
+
+        function showDetailPanel(d) {
+            const panel = document.getElementById('detailPanel');
+            const content = document.getElementById('detailContent');
+
+            content.innerHTML = `
+                <div class="mb-8 border-b border-red-600/30 pb-4">
+                    <span class="text-[9px] font-bold text-red-600 tracking-[0.4em] mb-2 block">DEBRIEFING_ID: ${Math.random().toString(16).slice(2, 8).toUpperCase()}</span>
+                    <h2 class="text-4xl font-black italic tracking-tighter glow-red">${d.name}</h2>
+                </div>
+
+                <div class="space-y-6 mb-8">
+                    <div class="flex justify-between items-end border-b border-red-900/30 py-2">
+                        <span class="text-[10px] text-red-900 font-bold tracking-widest">ASSIGNED AGENT</span>
+                        <span class="text-sm font-black italic text-red-600">AGENT: ${d.agent}</span>
+                    </div>
+                    <div class="flex justify-between items-end border-b border-red-900/30 py-2">
+                        <span class="text-[10px] text-red-900 font-bold tracking-widest">THREAT LEVEL</span>
+                        <span class="text-sm font-black italic ${d.risk === 'CRITICAL' ? 'text-red-600 animate-pulse' : 'text-red-400'}">${d.risk}</span>
+                    </div>
+                    <div class="flex justify-between items-end border-b border-red-900/30 py-2">
+                        <span class="text-[10px] text-red-900 font-bold tracking-widest">TOTAL ENGAGEMENTS</span>
+                        <span class="text-sm font-black italic text-red-600">${d.cases}</span>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-red-600/5 border border-red-600/20 mb-6">
+                    <p class="text-[9px] leading-relaxed text-red-300 tracking-wide">
+                        该区域已列入${d.risk}监控。所有通信通过加密隧道传输。
+                    </p>
+                </div>
+
+                <button class="w-full py-4 border border-red-600 text-red-600 text-[10px] font-black tracking-[0.5em] hover:bg-red-600 hover:text-black transition-all">
+                    INITIATE_CONTACT
+                </button>
+            `;
+            panel.style.transform = 'translateX(0)';
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('detailPanel').style.transform = 'translateX(150%)';
+            globe.controls().autoRotate = true;
+            updateListHighlight(null);
+        }
+
+        function renderList(data) {
+            const list = document.getElementById('countryList');
+            list.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('div');
+                row.id = `list-item-${item.code}`;
+                row.className = `group flex items-center justify-between p-3 cursor-pointer border-b border-red-950/30 hover:bg-red-600/10 transition-all`;
+                row.onclick = () => focusCountry(item);
+                row.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="text-[9px] font-black text-red-900 group-hover:text-red-600">${item.code}</span>
+                        <span class="text-[11px] font-black tracking-widest group-hover:translate-x-1 transition-transform italic">${item.name}</span>
+                    </div>
+                    <div class="w-1.5 h-1.5 ${item.risk === 'CRITICAL' ? 'bg-red-600 shadow-[0_0_5px_#ff0000]' : 'bg-red-900'}"></div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function updateListHighlight(activeCode) {
+            document.querySelectorAll('#countryList > div').forEach(el => {
+                el.classList.remove('bg-red-600/20', 'border-red-600/50');
+            });
+            if (activeCode) {
+                const activeEl = document.getElementById(`list-item-${activeCode}`);
+                if (activeEl) activeEl.classList.add('bg-red-600/20', 'border-red-600/50');
+            }
+        }
+
+        document.getElementById('closeDetail').onclick = closeDetailPanel;
+
+        window.onload = () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            renderList(countryData);
+            window.addEventListener('resize', () => {
+                globe.width(window.innerWidth);
+                globe.height(window.innerHeight);
+            });
+        };
+    </script>
+</body>
+</html>
