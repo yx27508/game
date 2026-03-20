@@ -105,22 +105,6 @@
             box-shadow: 0 0 20px var(--red-core);
         }
 
-        /* 状态呼吸灯 */
-        .status-pulse {
-            width: 8px;
-            height: 8px;
-            background: var(--red-core);
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
         .reveal {
             opacity: 0;
             transform: translateY(20px);
@@ -142,22 +126,16 @@
     <div class="fixed top-0 w-full z-[110] bg-red-600 text-white py-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] overflow-hidden shadow-[0_0_20px_rgba(255,0,0,0.5)]">
         <div class="marquee-container">
             <div class="marquee-content">
-                <!-- 原始版本 -->
                 <span class="mx-8">Live Status: Operation Worldwide · Authorized Channel Only</span>
                 <span class="mx-8 text-black/50">|</span>
-                <!-- 中文版 -->
                 <span class="mx-8">实时状态：全球运行 · 仅限授权渠道</span>
                 <span class="mx-8 text-black/50">|</span>
-                <!-- 法语版 -->
                 <span class="mx-8">Statut : Opération mondiale · Canal autorisé uniquement</span>
                 <span class="mx-8 text-black/50">|</span>
-                <!-- 日语版 -->
                 <span class="mx-8">ライブステータス：世界中で稼働中 · 認可されたチャネルのみ</span>
                 <span class="mx-8 text-black/50">|</span>
-                <!-- 西班牙语版 -->
                 <span class="mx-8">Estado en vivo: Operación mundial · Canal autorizado solamente</span>
                 <span class="mx-8 text-black/50">|</span>
-                <!-- 德语版 -->
                 <span class="mx-8">Live-Status: Weltweiter Betrieb · Nur autorisierter Kanal</span>
                 <span class="mx-8 text-black/50">|</span>
 
@@ -228,17 +206,13 @@
         </div>
     </section>
 
-    <!-- Agent 模块 (Agent: CA) -->
-    <section id="about" class="max-w-6xl mx-auto px-6 py-40 border-y border-white/5">
+    <!-- Agent 模块 (极简) -->
+    <section id="about" class="max-w-6xl mx-auto px-6 py-48 border-y border-white/5">
         <div class="text-center reveal">
             <p class="text-[10px] text-red-600 font-black uppercase tracking-[0.5em] mb-4">Core Investigator</p>
-            <h2 class="text-7xl md:text-9xl font-black italic uppercase text-white hover:text-red-600 transition-colors duration-500">
+            <h2 class="text-7xl md:text-9xl font-black italic uppercase text-white hover:text-red-600 transition-colors duration-500 cursor-default">
                 Agent: CA
             </h2>
-            <div class="mt-10 inline-flex items-center space-x-4 px-6 py-2 border border-white/10 rounded-full">
-                <span class="status-pulse"></span>
-                <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Active Duty / Online</span>
-            </div>
         </div>
     </section>
 
