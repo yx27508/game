@@ -59,14 +59,32 @@
             font-weight: bold;
         }
 
-        .notice-banner {
+        /* Scrolling Banner Styles */
+        .notice-banner-container {
             background: linear-gradient(90deg, #450a0a, #dc2626, #450a0a);
             color: #ffffff;
             font-weight: bold;
             font-size: 0.85rem;
-            text-align: center;
             padding: 8px 0;
-            letter-spacing: 0.05em;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            z-index: 60;
+        }
+
+        .scrolling-text {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 25s linear infinite;
+        }
+
+        .scrolling-text:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
         ::-webkit-scrollbar {
@@ -86,13 +104,15 @@
 </head>
 <body>
 
-    <!-- Target Audience Banner -->
-    <div class="notice-banner">
-        【专享公告】目前仅面向中国客户提供全球调查及取证服务
+    <!-- Target Audience Scrolling Banner -->
+    <div class="notice-banner-container">
+        <div class="scrolling-text uppercase tracking-widest">
+            【专享公告】目前仅面向中国客户提供全球调查及取证服务 —————— 合法持牌机构 · 政府认证调查 · 256位端到端加密保护 —————— 我们正在全球寻找顶尖律师事务所进行战略合作，共同构建跨境正义执行网络。
+        </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="fixed w-full z-50 glass-card py-4 top-0 mt-8 md:mt-10 lg:mt-0 border-b border-red-900/20">
+    <nav class="fixed w-full z-50 glass-card py-4 top-0 mt-[36px] border-b border-red-900/20">
         <div class="container mx-auto px-6 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <i data-lucide="shield-alert" class="detective-accent w-8 h-8"></i>
@@ -105,11 +125,12 @@
                 <a href="#home" class="hover:text-red-500 transition">首页</a>
                 <a href="#services" class="hover:text-red-500 transition">手段</a>
                 <a href="#process" class="hover:text-red-500 transition">流程</a>
-                <a href="#cases" class="hover:text-red-500 transition">成功案例</a>
+                <a href="#cases" class="hover:text-red-500 transition">案例</a>
+                <a href="#partnership" class="hover:text-red-500 transition font-bold text-red-400">律所合作</a>
                 <a href="#contact" class="hover:text-red-500 transition">联系</a>
             </div>
             <button class="md:hidden">
-                <i data-lucide="menu"></i>
+                <i data-lucide="menu" class="text-white"></i>
             </button>
         </div>
     </nav>
@@ -131,8 +152,8 @@
                     <a href="#contact" class="btn-primary px-10 py-4 rounded-md font-bold text-center tracking-widest">
                         立即发起匿名咨询
                     </a>
-                    <a href="#services" class="border border-white/20 hover:bg-white/5 px-10 py-4 rounded-md font-bold text-center transition tracking-widest">
-                        核心取证手段
+                    <a href="#partnership" class="border border-red-600/30 hover:bg-red-600/5 px-10 py-4 rounded-md font-bold text-center transition tracking-widest text-red-500">
+                        律所战略合作
                     </a>
                 </div>
             </div>
@@ -293,11 +314,47 @@
         </div>
     </section>
 
+    <!-- Partnership Section -->
+    <section id="partnership" class="py-24 bg-[#050505]">
+        <div class="container mx-auto px-6">
+            <div class="glass-card p-12 md:p-16 rounded-3xl border-2 border-red-900/30 text-center relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-red-600/5 rounded-full blur-3xl group-hover:bg-red-600/10 transition-all duration-700"></div>
+
+                <i data-lucide="handshake" class="w-20 h-20 detective-accent mx-auto mb-8 animate-pulse"></i>
+                <h2 class="text-3xl md:text-5xl font-black mb-6 uppercase tracking-widest">全球律师事务所合作</h2>
+                <div class="w-24 h-1.5 bg-red-600 mx-auto mb-10"></div>
+
+                <p class="text-gray-400 text-lg md:text-xl max-w-4xl mx-auto leading-relaxed mb-12 font-light">
+                    私人侦探事务所正致力于构建一个全球化的正义执行网络。我们诚邀世界各地的顶尖律师事务所建立战略合作伙伴关系，通过“<span class="text-white font-bold">高级取证技术 + 专业法律诉讼</span>”的闭环模式，共同为中国客户提供无国界的法律保护与真相挖掘服务。
+                </p>
+
+                <div class="flex flex-wrap justify-center gap-10 text-xs md:text-sm uppercase tracking-[0.3em] font-bold">
+                    <span class="flex items-center gap-3 text-red-500/70 hover:text-red-500 transition cursor-default">
+                        <i data-lucide="globe-2" class="w-5 h-5"></i> 资源全球共享
+                    </span>
+                    <span class="flex items-center gap-3 text-red-500/70 hover:text-red-500 transition cursor-default">
+                        <i data-lucide="briefcase" class="w-5 h-5"></i> 专业技能互补
+                    </span>
+                    <span class="flex items-center gap-3 text-red-500/70 hover:text-red-500 transition cursor-default">
+                        <i data-lucide="scale-3d" class="w-5 h-5"></i> 联合案件研判
+                    </span>
+                </div>
+
+                <div class="mt-12">
+                    <a href="mailto:peppldx@proton.me?subject=律所合作洽谈" class="inline-block border border-red-600 px-10 py-4 rounded-full font-bold text-red-500 hover:bg-red-600 hover:text-white transition duration-500 tracking-widest">
+                        欢迎垂询合作事宜
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Contact Section -->
     <section id="contact" class="py-24 bg-[#050505] relative overflow-hidden">
         <div class="container mx-auto px-6">
             <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-4xl md:text-5xl font-bold mb-8 uppercase tracking-widest">联系高级探员</h2>
+                <h2 class="text-4xl md:text-5xl font-bold mb-8 uppercase tracking-widest text-white">联系高级探员</h2>
                 <p class="text-gray-500 mb-16 text-lg font-light">
                     私人侦探事务所仅面向中国客户提供服务。请拨打授权热线或通过加密邮件预约。
                     <br><span class="text-red-500/80 text-sm font-bold tracking-widest uppercase mt-4 block">Secured by 256-bit End-to-End Encryption</span>
@@ -308,7 +365,7 @@
                     <div class="glass-card p-8 rounded-2xl text-left border-t-4 border-t-red-600">
                         <div class="flex items-center space-x-3 mb-8">
                             <i data-lucide="phone-forwarded" class="detective-accent w-6 h-6"></i>
-                            <h3 class="text-xl font-bold uppercase tracking-widest italic">执照直拨热线</h3>
+                            <h3 class="text-xl font-bold uppercase tracking-widest italic text-white">执照直拨热线</h3>
                         </div>
                         <div class="space-y-4 font-mono phone-grid text-sm">
                             <div class="border border-white/5 p-4 rounded-lg flex justify-between items-center transition duration-300">
@@ -334,7 +391,7 @@
                     <div class="glass-card p-8 rounded-2xl text-left border-t-4 border-t-red-600 flex flex-col justify-center">
                         <div class="flex items-center space-x-3 mb-8">
                             <i data-lucide="mail-warning" class="detective-accent w-6 h-6"></i>
-                            <h3 class="text-xl font-bold uppercase tracking-widest italic">专属加密邮箱</h3>
+                            <h3 class="text-xl font-bold uppercase tracking-widest italic text-white">专属加密邮箱</h3>
                         </div>
                         <div class="bg-[#0c0c0c] border border-white/5 p-8 rounded-xl text-center">
                             <p class="text-red-500 text-xs mb-4 font-bold tracking-[0.2em] uppercase">Private & Confidential</p>
@@ -355,14 +412,14 @@
             <div class="flex flex-col md:flex-row justify-between items-center gap-12">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="shield-alert" class="detective-accent w-8 h-8"></i>
-                    <span class="text-2xl font-black tracking-tighter italic uppercase">私人侦探事务所</span>
+                    <span class="text-2xl font-black tracking-tighter italic uppercase text-white">私人侦探事务所</span>
                 </div>
                 <div class="text-[10px] text-gray-700 text-center md:text-left max-w-sm uppercase tracking-widest leading-loose font-medium">
                     本事务所系政府认证持牌机构。业务目前仅限中国客户。所有操作严格遵循证据法、隐私法及国际公约。
                 </div>
                 <div class="flex space-x-8">
-                    <a href="mailto:peppldx@proton.me" class="text-gray-600 hover:text-red-500 transition"><i data-lucide="mail" class="w-6 h-6"></i></a>
-                    <a href="#" class="text-gray-600 hover:text-red-500 transition"><i data-lucide="file-check" class="w-6 h-6"></i></a>
+                    <a href="mailto:peppldx@proton.me" class="text-gray-600 hover:text-red-500 transition"><i data-lucide="mail" class="w-6 h-6 text-white"></i></a>
+                    <a href="#" class="text-gray-600 hover:text-red-500 transition"><i data-lucide="file-check" class="w-6 h-6 text-white"></i></a>
                 </div>
             </div>
             <div class="mt-12 pt-8 border-t border-white/5 text-center text-gray-800 text-[10px] uppercase tracking-[0.5em] font-bold">
