@@ -230,12 +230,12 @@
         globe.controls().autoRotate = true;
         globe.controls().autoRotateSpeed = 0.3;
 
-        function focusCountry(d) {
-            globe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.8 }, 1200);
-            globe.controls().autoRotate = false;
-            showDetailPanel(d);
-            updateListHighlight(d.code);
-        }
+function focusCountry(d) {
+    globe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.8 }, 1200);
+    globe.controls().autoRotate = false;
+    showDetailPanel(d);
+    updateListHighlight(d.code);
+}
 
         function showDetailPanel(d) {
             const panel = document.getElementById('detailPanel');
@@ -258,7 +258,7 @@
                     </div>
                     <div class="flex justify-between items-end border-b border-red-900/30 py-2">
                         <span class="text-[10px] text-red-900 font-bold tracking-widest">TOTAL ENGAGEMENTS</span>
-                        <span class="text-sm font-black italic text-red-600">${d.cases}</span>
+                        <span class="text-sm font-black italic text-red-600 ${d.code === 'AU' ? 'cursor-pointer hover:underline' : ''}" ${d.code === 'AU' ? `onclick="window.location.href='case1.html'"` : ''}>${d.cases}</span>
                     </div>
                 </div>
 
