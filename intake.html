@@ -1,369 +1,254 @@
-import React, { useState } from 'react';
-import {
-  Shield,
-  Send,
-  Terminal,
-  Lock,
-  User,
-  Briefcase,
-  FileSearch,
-  AlertTriangle,
-  ChevronRight,
-  ChevronLeft,
-  CheckCircle2,
-  Scale,
-  Mail,
-  Loader2
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE CONTACT | Agent: CA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pure-red: #ff0000;
+            --pure-black: #000000;
+            --glow-red: rgba(255, 0, 0, 0.5);
+        }
 
-const App = () => {
-  const [step, setStep] = useState(1);
-  const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    // Step 1: Client Information (KYC)
-    clientName: '',
-    clientDOB: '',
-    clientContact: '',
-    clientAddress: '',
+        body {
+            background-color: var(--pure-black);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            cursor: crosshair;
+        }
 
-    // Step 2: Relationship & Purpose
-    relationship: '',
-    purpose: '',
-    legalCounsel: '否',
+        /* 1. 雷达扫描背景 */
+        .radar-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
 
-    // Step 3: Subject Information
-    subjectName: '',
-    subjectDetails: '',
+        .grid-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
 
-    // Step 4: Evidence & Budget
-    evidenceType: [],
-    budget: '',
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--pure-red), transparent);
+            box-shadow: 0 0 15px var(--pure-red);
+            top: -10px;
+            animation: scan 4s linear infinite;
+            opacity: 0.7;
+        }
 
-    // Step 5: Declaration
-    agreed: false
-  });
-
-  const nextStep = () => {
-    if (step < 5) setStep(s => s + 1);
-  };
-  const prevStep = () => {
-    if (step > 1) setStep(s => s - 1);
-  };
-
-  // 处理提交逻辑
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (step === 5) {
-      if (!formData.agreed) return;
-
-      setIsSubmitting(true);
-
-      // 模拟加密与发送至 peppldx@proton.me 的过程
-      // 在实际生产环境中，此处应调用后端 API 或 Formspree 等服务
-      setTimeout(() => {
-        console.log("Transmission Data Package:", formData);
-        console.log("Target Node: peppldx@proton.me");
-        setIsSubmitting(false);
-        setSubmitted(true);
-      }, 3000);
-
-    } else {
-      nextStep();
-    }
-  };
-
-  const handleCheckbox = (type) => {
-    const newEvidence = formData.evidenceType.includes(type)
-      ? formData.evidenceType.filter(t => t !== type)
-      : [...formData.evidenceType, type];
-    setFormData({ ...formData, evidenceType: newEvidence });
-  };
-
-  // 可点击的进度条组件
-  const Progress = () => (
-    <div className="flex gap-2 mb-12">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button
-          key={s}
-          type="button"
-          onClick={() => setStep(s)}
-          className="flex-1 group transition-all"
-          disabled={isSubmitting}
-          title={`跳转至步骤 ${s}`}
-        >
-          <div
-            className={`h-1 w-full transition-all duration-500 ${step >= s ? 'bg-red-600 shadow-[0_0_8px_rgba(255,0,0,0.4)]' : 'bg-zinc-900 group-hover:bg-zinc-700'}`}
-          />
-          <div className={`text-[8px] font-black mt-2 text-left transition-colors ${step === s ? 'text-red-500' : 'text-zinc-700 uppercase'}`}>
-            0{s}
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-black text-white font-sans flex items-center justify-center p-4 md:p-12 selection:bg-red-600 selection:text-white">
-      {/* 动态背景背景 */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-red-600/10 shadow-[0_0_15px_rgba(255,0,0,0.2)] animate-scan"></div>
-      </div>
-
-      <div className="w-full max-w-2xl animate-reveal relative">
-        {!submitted ? (
-          <form onSubmit={handleSubmit} className="space-y-8 bg-zinc-950/20 p-8 border border-zinc-900 backdrop-blur-sm relative overflow-hidden">
-
-            {/* 提交中的遮罩层 */}
-            {isSubmitting && (
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="text-red-600 animate-spin" size={32} />
-                <div className="text-center">
-                  <p className="text-[10px] font-black italic tracking-[0.4em] text-red-500 uppercase">Encrypting Package...</p>
-                  <p className="text-[9px] text-zinc-500 tracking-widest uppercase mt-2">Routing to: peppldx@proton.me</p>
-                </div>
-              </div>
-            )}
-
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-900 pb-6 mb-8">
-              <div className="flex items-center gap-4">
-                <div className="p-2 border border-red-600/50">
-                  <Shield size={20} className="text-red-600" />
-                </div>
-                <div>
-                  <h2 className="text-[12px] font-black italic tracking-[0.4em] uppercase text-zinc-100">
-                    INTAKE SYSTEM V3.1
-                  </h2>
-                  <p className="text-[9px] text-zinc-600 font-bold tracking-widest uppercase mt-1">
-                    Direct Access Enabled
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-mono text-red-600">PHASE_0{step}</span>
-              </div>
-            </div>
-
-            <Progress />
-
-            {/* Step 1: KYC */}
-            {step === 1 && (
-              <div className="space-y-8 animate-reveal">
-                <div className="flex items-center gap-2 text-red-500 mb-4">
-                  <User size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">01. 委托人身份信息 (KYC)</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <Field label="法定全名" placeholder="FULL LEGAL NAME" value={formData.clientName} onChange={v => setFormData({...formData, clientName: v})} />
-                  <Field label="出生日期" placeholder="YYYY-MM-DD" value={formData.clientDOB} onChange={v => setFormData({...formData, clientDOB: v})} />
-                </div>
-                <Field label="联系方式 (EMAIL/PHONE)" placeholder="CONTACT INFO" value={formData.clientContact} onChange={v => setFormData({...formData, clientContact: v})} />
-                <Field
-                  label="居住地址 (选填)"
-                  placeholder="RESIDENTIAL ADDRESS (OPTIONAL)"
-                  required={false}
-                  value={formData.clientAddress}
-                  onChange={v => setFormData({...formData, clientAddress: v})}
-                />
-
-                <div className="p-4 bg-zinc-900/50 border border-zinc-800 flex items-start gap-4">
-                  <Mail className="text-red-600 shrink-0" size={16} />
-                  <div>
-                    <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-1">证件核验说明</h4>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed italic">
-                      为确保机密性，此处暂不收集证件扫描件。在初审通过后的邮件联系环节中，您将被要求通过加密渠道提供有效的身份证件完成最终流程。
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Relationship & Purpose */}
-            {step === 2 && (
-              <div className="space-y-8 animate-reveal">
-                <div className="flex items-center gap-2 text-red-500 mb-4">
-                  <Briefcase size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">02. 法律关系与调查目的</span>
-                </div>
-                <Field label="与调查对象的关系" placeholder="例如：债权人、商业纠纷方、家属..." value={formData.relationship} onChange={v => setFormData({...formData, relationship: v})} />
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">调查主要目的</label>
-                  <select className="w-full bg-black border-b border-zinc-800 py-2 text-sm focus:border-red-600 outline-none font-mono" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})}>
-                    <option value="">请选择主要目的...</option>
-                    <option>Locate Debtor / 寻找债务人</option>
-                    <option>Asset Investigation / 资产调查</option>
-                    <option>Background Check / 背景调查</option>
-                    <option>Fraud Investigation / 欺诈调查</option>
-                    <option>Missing Person / 寻找失踪人员</option>
-                    <option>Litigation Support / 诉讼支持</option>
-                  </select>
-                </div>
-                <div className="p-4 bg-red-950/10 border-l-2 border-red-900 text-[10px] text-zinc-500 leading-relaxed italic">
-                  * 严禁任何 Stalking (跟踪) 或 Harassment (骚扰) 类型的非法调查申请。
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Subject Info */}
-            {step === 3 && (
-              <div className="space-y-8 animate-reveal">
-                <div className="flex items-center gap-2 text-red-500 mb-4">
-                  <FileSearch size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">03. 调查对象基础资料</span>
-                </div>
-                <Field label="调查对象姓名/代号" placeholder="SUBJECT NAME / ALIAS" value={formData.subjectName} onChange={v => setFormData({...formData, subjectName: v})} />
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">已知线索 (电话、地址、社交账号等)</label>
-                  <textarea
-                    className="w-full bg-transparent border border-zinc-900 p-4 text-sm focus:border-red-600 outline-none transition-all placeholder:text-zinc-900 resize-none font-mono"
-                    rows="5"
-                    placeholder="输入所有已掌握的零碎信息..."
-                    value={formData.subjectDetails}
-                    onChange={(e) => setFormData({...formData, subjectDetails: e.target.value})}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Evidence & Budget */}
-            {step === 4 && (
-              <div className="space-y-8 animate-reveal">
-                <div className="flex items-center gap-2 text-red-500 mb-4">
-                  <Terminal size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">04. 证据材料与预算</span>
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block mb-4">持有材料 (可多选)</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {['合同/协议', '聊天记录', '转账/财务记录', '公司文件', '身份照片', '其他'].map(type => (
-                      <div
-                        key={type}
-                        onClick={() => handleCheckbox(type)}
-                        className={`p-3 border text-[10px] font-bold cursor-pointer transition-all flex items-center justify-between ${formData.evidenceType.includes(type) ? 'border-red-600 text-red-600 bg-red-600/5' : 'border-zinc-900 text-zinc-600'}`}
-                      >
-                        {type}
-                        {formData.evidenceType.includes(type) && <CheckCircle2 size={12} />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <Field
-                  label="调查预算范围 (AUD/CNY - 选填)"
-                  placeholder="EXPECTED BUDGET RANGE (OPTIONAL)"
-                  required={false}
-                  value={formData.budget}
-                  onChange={v => setFormData({...formData, budget: v})}
-                />
-              </div>
-            )}
-
-            {/* Step 5: Declaration */}
-            {step === 5 && (
-              <div className="space-y-8 animate-reveal">
-                <div className="flex items-center gap-2 text-red-500 mb-4">
-                  <Scale size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">05. 合法用途声明</span>
-                </div>
-                <div className="bg-zinc-950 p-6 border border-zinc-900 space-y-4 text-[11px] text-zinc-400 leading-relaxed font-mono">
-                  <p>1. 本人确认以上提供之所有信息均为真实、准确且无误导性。</p>
-                  <p>2. 本次调查仅用于所述之合法目的，绝不涉及骚扰、复仇或任何形式的违法犯罪行为。</p>
-                  <p>3. 本人理解 CA PI 机构并不对调查结果作绝对性承诺。</p>
-                  <p>4. 任何虚假陈述或非法目的将导致委托立即终止。</p>
-                </div>
-                <div
-                  onClick={() => setFormData({...formData, agreed: !formData.agreed})}
-                  className="flex items-center gap-3 cursor-pointer group"
-                >
-                  <div className={`w-5 h-5 border transition-all flex items-center justify-center ${formData.agreed ? 'bg-red-600 border-red-600' : 'border-zinc-800 group-hover:border-red-600'}`}>
-                    {formData.agreed && <CheckCircle2 size={14} className="text-black" />}
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-zinc-300">本人已阅读并同意上述《合法用途声明》</span>
-                </div>
-              </div>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex gap-4 pt-8 border-t border-zinc-900">
-              {step > 1 && (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  disabled={isSubmitting}
-                  className="flex-1 py-4 border border-zinc-800 text-zinc-600 font-black italic uppercase tracking-widest text-[10px] hover:border-zinc-600 hover:text-zinc-400 transition-all flex items-center justify-center gap-2"
-                >
-                  <ChevronLeft size={14} /> Back
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={(step === 5 && !formData.agreed) || isSubmitting}
-                className="flex-[2] py-4 bg-red-600 text-black font-black italic uppercase tracking-[0.3em] text-[10px] hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,0,0,0.2)] disabled:opacity-20 disabled:cursor-not-allowed"
-              >
-                {step === 5 ? 'Final Transmission' : 'Proceed to Next Section'} <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <p className="text-[8px] text-center text-zinc-800 font-bold tracking-[0.3em] uppercase italic">
-              All transmitted data is zero-knowledge encrypted.
-            </p>
-          </form>
-        ) : (
-          <div className="text-center py-24 animate-reveal space-y-8 bg-zinc-950/20 p-12 border border-red-600 shadow-[0_0_40px_rgba(255,0,0,0.1)]">
-            <div className="inline-block p-6 border border-red-600 relative">
-              <Lock className="text-red-600" size={40} />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-600"></div>
-              <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-red-600"></div>
-            </div>
-            <div>
-              <h3 className="text-2xl font-black italic uppercase tracking-[0.3em] mb-4 text-white">传输成功</h3>
-              <p className="text-zinc-500 text-[10px] font-bold tracking-[0.2em] uppercase max-w-xs mx-auto leading-loose">
-                Application Serial: {Math.random().toString(36).toUpperCase().substr(2, 9)} <br />
-                数据已加密并安全发送至节点: <span className="text-red-500">peppldx@proton.me</span> <br />
-                请保持通讯渠道静默，等待 Agent CA 的评估结果。
-              </p>
-            </div>
-            <button
-              onClick={() => { setSubmitted(false); setStep(1); }}
-              className="px-10 py-3 border border-zinc-800 text-zinc-700 text-[9px] font-black uppercase tracking-widest hover:border-red-600 hover:text-red-600 transition-all"
-            >
-              [ Return to Terminal ]
-            </button>
-          </div>
-        )}
-      </div>
-
-      <style>{`
         @keyframes scan {
-          from { top: -10%; }
-          to { top: 110%; }
+            0% { top: -10%; }
+            100% { top: 110%; }
         }
-        @keyframes reveal {
-          from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
-          to { opacity: 1; transform: translateY(0); filter: blur(0); }
+
+        /* 2. 权威感排版 */
+        .heavy-italic {
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
         }
-        .animate-scan { animation: scan 8s linear infinite; }
-        .animate-reveal { animation: reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      `}</style>
+
+        .label-tag {
+            font-family: 'JetBrains+Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.4em;
+            color: var(--pure-red);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* 3. 霓虹光晕 */
+        .neon-text {
+            text-shadow: 0 0 10px var(--glow-red), 0 0 20px var(--glow-red);
+        }
+
+        .neon-border {
+            border: 1px solid var(--pure-red);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.2), inset 0 0 10px rgba(255, 0, 0, 0.1);
+        }
+
+        /* 4. 动态滚动栏 */
+        .marquee-container {
+            border-bottom: 1px solid rgba(255, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .marquee-content {
+            display: flex;
+            white-space: nowrap;
+            animation: marquee 30s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* 5. 呼吸式反馈 */
+        .pulse-logo {
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 5px var(--pure-red)); }
+            50% { opacity: 0.7; transform: scale(0.98); filter: drop-shadow(0 0 15px var(--pure-red)); }
+        }
+
+        .glass-card {
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 6. 入场动画 */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: revealEffect 1s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes revealEffect {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { width: 0px; }
+
+        .copy-feedback {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--pure-red);
+            color: black;
+            padding: 0.5rem 2rem;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- 背景系统 -->
+    <div class="radar-bg">
+        <div class="grid-layer"></div>
+        <div class="scan-line"></div>
     </div>
-  );
-};
 
-// Sub-component for form fields
-const Field = ({ label, placeholder, value, onChange, type = "text", required = true }) => (
-  <div className="relative group space-y-2">
-    <label className="text-[9px] font-black text-zinc-600 tracking-widest uppercase transition-colors group-focus-within:text-red-600">
-      {label}
-    </label>
-    <input
-      required={required}
-      type={type}
-      className="w-full bg-transparent border-b border-zinc-800 py-2 text-sm focus:border-red-600 outline-none transition-all placeholder:text-zinc-900 font-mono"
-      placeholder={placeholder}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  </div>
-);
+    <!-- 顶部动态滚动栏 -->
+    <div class="marquee-container fixed top-0 w-full z-50 py-2">
+        <div class="marquee-content flex gap-12 text-[10px] font-mono tracking-widest text-red-500 uppercase">
+            <span>Operational Status: Active / Secure Channel Only / End-to-End Encrypted / 24/7 Monitoring / 秘密調査進行中 / Confidential Protocol / 24/7 监控中 / Operational Status: Active</span>
+            <span>Operational Status: Active / Secure Channel Only / End-to-End Encrypted / 24/7 Monitoring / 秘密調査進行中 / Confidential Protocol / 24/7 监控中 / Operational Status: Active</span>
+        </div>
+    </div>
 
-export default App;
+    <main class="h-screen w-full flex flex-col items-center justify-center px-6 relative">
+
+        <!-- Logo -->
+        <div class="pulse-logo w-20 h-20 border-2 border-red-600 flex items-center justify-center rotate-45 mb-12 reveal">
+            <span class="rotate-[-45deg] font-black text-xl text-red-600">CA</span>
+        </div>
+
+        <!-- 核心内容区 -->
+        <div class="max-w-3xl w-full text-center">
+            <section class="mb-12 reveal" style="animation-delay: 0.2s;">
+                <span class="label-tag">Communication Node</span>
+                <h1 class="heavy-italic text-5xl md:text-7xl neon-text text-red-600 leading-none">
+                    SECURE<br>ACCESS
+                </h1>
+            </section>
+
+            <!-- WeChat ID 展示 -->
+            <div class="reveal" style="animation-delay: 0.4s;">
+                <div class="glass-card neon-border p-10 md:p-16 inline-block relative group cursor-pointer" onclick="copyId()">
+                    <div class="absolute top-0 left-0 w-2 h-2 bg-red-600"></div>
+                    <div class="absolute top-0 right-0 w-2 h-2 bg-red-600"></div>
+                    <div class="absolute bottom-0 left-0 w-2 h-2 bg-red-600"></div>
+                    <div class="absolute bottom-0 right-0 w-2 h-2 bg-red-600"></div>
+
+                    <span class="label-tag mb-4 opacity-50">WECHAT ID / 微信 ID</span>
+
+                    <div class="flex flex-col items-center">
+                        <div id="wechat-id" class="heavy-italic text-2xl md:text-4xl text-white tracking-[0.3em] font-mono mb-4 transition-all group-hover:text-red-500">
+                            wxid_onwwebh3wgk312
+                        </div>
+                        <div class="text-[10px] font-mono text-red-600 tracking-[0.5em] uppercase opacity-0 group-hover:opacity-100 transition-opacity">
+                            Click to Copy WeChat Signal
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-16 reveal" style="animation-delay: 0.6s;">
+                <p class="text-[10px] font-mono text-gray-600 uppercase tracking-[0.4em] leading-relaxed">
+                    Identity verification required upon initial contact via WeChat.<br>
+                    Encryption level: Military Grade (AES-256).
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 复制反馈 -->
+    <div id="copy-msg" class="copy-feedback">
+        WECHAT ID COPIED
+    </div>
+
+    <!-- 底部状态 -->
+    <footer class="fixed bottom-0 w-full py-8 px-6 flex justify-between items-end pointer-events-none">
+        <div class="text-[9px] font-mono text-gray-700 tracking-[0.3em] uppercase">
+            System: Agent-CA.v2<br>
+            Loc: Undisclosed
+        </div>
+        <div class="text-[9px] font-mono text-red-900 tracking-[0.3em] uppercase text-right">
+            Termination: Unauthorized access<br>
+            will trigger protocol 09.
+        </div>
+    </footer>
+
+    <script>
+        function copyId() {
+            const idText = "wxid_onwwebh3wgk312";
+            const textArea = document.createElement("textarea");
+            textArea.value = idText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const msg = document.getElementById('copy-msg');
+                msg.style.display = 'block';
+                setTimeout(() => {
+                    msg.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Copy failed');
+            }
+            document.body.removeChild(textArea);
+        }
+    </script>
+</body>
+</html>
